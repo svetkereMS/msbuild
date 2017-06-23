@@ -1,6 +1,6 @@
 {
   "version": "15.3-preview",
-  "buildNumberOffset": "203",
+  "buildNumberOffset": "348",
   "assemblyVersion": "15.1",
   "publicReleaseRefSpec": [
     "^refs/heads/master$",
