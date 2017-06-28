@@ -607,7 +607,7 @@ namespace Microsoft.Build.BackEnd
             {
                 if (howToExecuteTask == TaskExecutionMode.ExecuteTaskAndGatherOutputs)
                 {
-                    if (!_targetLoggingContext.LoggingService.OnlyLogCriticalEvents)
+                    if (_targetLoggingContext.LoggingService.LogDiagnosticEvents)
                     {
                         // Expand the expression for the Log.
                         string expanded = bucket.Expander.ExpandIntoStringAndUnescape(_targetChildInstance.Condition, ExpanderOptions.ExpandAll, _targetChildInstance.ConditionLocation);

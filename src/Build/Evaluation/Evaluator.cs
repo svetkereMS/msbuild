@@ -724,9 +724,13 @@ namespace Microsoft.Build.Evaluation
             _evaluationLoggingContext = new EvaluationLoggingContext(loggingService, buildEventContext, _data.EvaluationId);
 
             _logProjectImportedEvents = Traits.Instance.EscapeHatches.LogProjectImports;
+            if (!_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
+            {
+                _logProjectImportedEvents = false;
+            }
 
 #if FEATURE_MSBUILD_DEBUGGER
-            InitializeForDebugging();
+                InitializeForDebugging();
 #endif
 
             // Pass0: load initial properties
@@ -779,11 +783,16 @@ namespace Microsoft.Build.Evaluation
 #endif
             string projectFile = String.IsNullOrEmpty(_projectRootElement.ProjectFileLocation.File) ? "(null)" : _projectRootElement.ProjectFileLocation.File;
 
-            _evaluationLoggingContext.LogBuildEvent(new ProjectEvaluationStartedEventArgs(ResourceUtilities.GetResourceString("EvaluationStarted"), projectFile)
+            if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
             {
-                BuildEventContext = _evaluationLoggingContext.BuildEventContext,
-                ProjectFile = projectFile
-            });
+                _evaluationLoggingContext.LogBuildEvent(
+                    new ProjectEvaluationStartedEventArgs(ResourceUtilities.GetResourceString("EvaluationStarted"),
+                        projectFile)
+                    {
+                        BuildEventContext = _evaluationLoggingContext.BuildEventContext,
+                        ProjectFile = projectFile
+                    });
+            }
 
 #if MSBUILDENABLEVSPROFILING 
             string endPass0 = String.Format(CultureInfo.CurrentCulture, "Evaluate Project {0} - End Pass 0 (Initial properties)", projectFile);
@@ -937,11 +946,16 @@ namespace Microsoft.Build.Evaluation
 
             _data.FinishEvaluation();
 
-            _evaluationLoggingContext.LogBuildEvent(new ProjectEvaluationFinishedEventArgs(ResourceUtilities.GetResourceString("EvaluationFinished"), projectFile)
+            if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
             {
-                BuildEventContext = _evaluationLoggingContext.BuildEventContext,
-                ProjectFile = projectFile
-            });
+                _evaluationLoggingContext.LogBuildEvent(
+                    new ProjectEvaluationFinishedEventArgs(ResourceUtilities.GetResourceString("EvaluationFinished"),
+                        projectFile)
+                    {
+                        BuildEventContext = _evaluationLoggingContext.BuildEventContext,
+                        ProjectFile = projectFile
+                    });
+            }
 
 #if FEATURE_MSBUILD_DEBUGGER
             return _projectLevelLocalsForBuild;
@@ -1334,7 +1348,11 @@ namespace Microsoft.Build.Evaluation
             ProjectTargetInstance otherTarget = _data.GetTarget(targetName);
             if (otherTarget != null)
             {
-                _evaluationLoggingContext.LogComment(MessageImportance.Low, "OverridingTarget", otherTarget.Name, otherTarget.Location.File, targetName, targetElement.Location.File);
+                if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
+                {
+                    _evaluationLoggingContext.LogComment(MessageImportance.Low, "OverridingTarget", otherTarget.Name,
+                        otherTarget.Location.File, targetName, targetElement.Location.File);
+                }
             }
 
             LinkedListNode<ProjectTargetElement> node;
@@ -1374,7 +1392,12 @@ namespace Microsoft.Build.Evaluation
                 {
                     // This is a message, not a warning, because that enables people to speculatively extend the build of a project
                     // It's low importance as it's addressed to build authors
-                    _evaluationLoggingContext.LogComment(MessageImportance.Low, "TargetDoesNotExistBeforeTargetMessage", unescapedBeforeTarget, targetElement.BeforeTargetsLocation.LocationString);
+                    if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
+                    {
+                        _evaluationLoggingContext.LogComment(MessageImportance.Low,
+                            "TargetDoesNotExistBeforeTargetMessage", unescapedBeforeTarget,
+                            targetElement.BeforeTargetsLocation.LocationString);
+                    }
                 }
             }
 
@@ -1397,7 +1420,12 @@ namespace Microsoft.Build.Evaluation
                 {
                     // This is a message, not a warning, because that enables people to speculatively extend the build of a project
                     // It's low importance as it's addressed to build authors
-                    _evaluationLoggingContext.LogComment(MessageImportance.Low, "TargetDoesNotExistAfterTargetMessage", unescapedAfterTarget, targetElement.AfterTargetsLocation.LocationString);
+                    if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
+                    {
+                        _evaluationLoggingContext.LogComment(MessageImportance.Low,
+                            "TargetDoesNotExistAfterTargetMessage", unescapedAfterTarget,
+                            targetElement.AfterTargetsLocation.LocationString);
+                    }
                 }
             }
         }
@@ -1665,13 +1693,16 @@ namespace Microsoft.Build.Evaluation
 
             if (newValue != oldValue)
             {
-                _evaluationLoggingContext.LogComment(
-                    MessageImportance.Low,
-                    "PropertyReassignment",
-                    property.Name,
-                    newValue,
-                    oldValue,
-                    location);
+                if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
+                {
+                    _evaluationLoggingContext.LogComment(
+                        MessageImportance.Low,
+                        "PropertyReassignment",
+                        property.Name,
+                        newValue,
+                        oldValue,
+                        location);
+                }
             }
         }
 
@@ -2268,9 +2299,12 @@ namespace Microsoft.Build.Evaluation
 
             string extensionPropertyRefAsString = fallbackSearchPathMatch.MsBuildPropertyFormat;
 
-            _evaluationLoggingContext.LogComment(MessageImportance.Low, "SearchPathsForMSBuildExtensionsPath",
-                                        extensionPropertyRefAsString,
-                                        String.Join(Path.PathSeparator.ToString(), pathsToSearch));
+            if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
+            {
+                _evaluationLoggingContext.LogComment(MessageImportance.Low, "SearchPathsForMSBuildExtensionsPath",
+                    extensionPropertyRefAsString,
+                    String.Join(Path.PathSeparator.ToString(), pathsToSearch));
+            }
 
             bool atleastOneExactFilePathWasLookedAtAndNotFound = false;
 
@@ -2304,7 +2338,12 @@ namespace Microsoft.Build.Evaluation
                 }
 
                 var newExpandedImportPath = importElement.Project.Replace(extensionPropertyRefAsString, extensionPathExpanded);
-                _evaluationLoggingContext.LogComment(MessageImportance.Low, "TryingExtensionsPath", newExpandedImportPath, extensionPathExpanded);
+
+                if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
+                {
+                    _evaluationLoggingContext.LogComment(MessageImportance.Low, "TryingExtensionsPath",
+                        newExpandedImportPath, extensionPathExpanded);
+                }
 
                 List<ProjectRootElement> projects;
                 var result = ExpandAndLoadImportsFromUnescapedImportExpression(directoryOfImportingFile, importElement, newExpandedImportPath, false, out projects);
@@ -2651,21 +2690,24 @@ namespace Microsoft.Build.Evaluation
                             {
                                 atleastOneImportIgnored = true;
 
-                                ProjectImportedEventArgs eventArgs = new ProjectImportedEventArgs(
-                                    importElement.Location.Line,
-                                    importElement.Location.Column,
-                                    ResourceUtilities.GetResourceString("ProjectImportSkippedEmptyFile"),
-                                    importFileUnescaped,
-                                    importElement.ContainingProject.FullPath,
-                                    importElement.Location.Line,
-                                    importElement.Location.Column)
+                                if (_evaluationLoggingContext.LoggingService.LogDiagnosticEvents)
                                 {
-                                    BuildEventContext = _evaluationLoggingContext.BuildEventContext,
-                                    UnexpandedProject = importElement.Project,
-                                    ProjectFile = importElement.ContainingProject.FullPath
-                                };
+                                    ProjectImportedEventArgs eventArgs = new ProjectImportedEventArgs(
+                                        importElement.Location.Line,
+                                        importElement.Location.Column,
+                                        ResourceUtilities.GetResourceString("ProjectImportSkippedEmptyFile"),
+                                        importFileUnescaped,
+                                        importElement.ContainingProject.FullPath,
+                                        importElement.Location.Line,
+                                        importElement.Location.Column)
+                                    {
+                                        BuildEventContext = _evaluationLoggingContext.BuildEventContext,
+                                        UnexpandedProject = importElement.Project,
+                                        ProjectFile = importElement.ContainingProject.FullPath
+                                    };
 
-                                _evaluationLoggingContext.LogBuildEvent(eventArgs);
+                                    _evaluationLoggingContext.LogBuildEvent(eventArgs);
+                                }
 
                                 continue;
                             }

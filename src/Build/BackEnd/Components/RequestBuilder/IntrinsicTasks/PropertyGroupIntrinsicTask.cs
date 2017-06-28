@@ -85,7 +85,7 @@ namespace Microsoft.Build.BackEnd
 
                             string evaluatedValue = bucket.Expander.ExpandIntoStringLeaveEscaped(property.Value, ExpanderOptions.ExpandAll, property.Location);
 
-                            if (LogTaskInputs && !LoggingContext.LoggingService.OnlyLogCriticalEvents)
+                            if ((LogTaskInputs || LoggingContext.LoggingService.LogDiagnosticEvents) && !LoggingContext.LoggingService.OnlyLogCriticalEvents)
                             {
                                 LoggingContext.LogComment(MessageImportance.Low, "PropertyGroupLogMessage", property.Name, evaluatedValue);
                             }

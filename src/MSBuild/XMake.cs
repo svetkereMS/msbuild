@@ -996,7 +996,7 @@ namespace Microsoft.Build.CommandLine
                 }
 
                 ToolsetDefinitionLocations toolsetDefinitionLocations = ToolsetDefinitionLocations.Default;
-
+                var logDiagnosticEvents = false;
                 projectCollection = new ProjectCollection
                         (
                         globalProperties,
@@ -1004,7 +1004,8 @@ namespace Microsoft.Build.CommandLine
                         null,
                         toolsetDefinitionLocations,
                         cpuCount,
-                        onlyLogCriticalEvents
+                        onlyLogCriticalEvents,
+                        logDiagnosticEvents
                         );
 
                 if (debugger)

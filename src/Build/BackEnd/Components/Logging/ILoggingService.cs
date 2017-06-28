@@ -82,6 +82,8 @@ namespace Microsoft.Build.BackEnd.Logging
             set;
         }
 
+        bool LogDiagnosticEvents { get; set; }
+
         /// <summary>
         /// Number of nodes in the system when it was initially started
         /// </summary>

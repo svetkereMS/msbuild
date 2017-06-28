@@ -1351,7 +1351,7 @@ namespace Microsoft.Build.BackEnd
         /// </remarks>
         private bool InternalSetTaskParameter(TaskPropertyInfo parameter, IList parameterValue)
         {
-            if (_logTaskInputs && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents && parameterValue.Count > 0)
+            if (_taskLoggingContext.LoggingService.LogDiagnosticEvents && parameterValue.Count > 0)
             {
                 string parameterText = ResourceUtilities.FormatResourceString("TaskParameterPrefix");
                 parameterText = ItemGroupLoggingHelper.GetParameterText(parameterText, parameter.Name, parameterValue);
@@ -1373,7 +1373,7 @@ namespace Microsoft.Build.BackEnd
             bool success = false;
 
             // Logging currently enabled only by an env var.
-            if (_logTaskInputs && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents)
+            if (_taskLoggingContext.LoggingService.LogDiagnosticEvents)
             {
                 // If the type is a list, we already logged the parameters
                 if (!(parameterValue is IList))
@@ -1493,7 +1493,7 @@ namespace Microsoft.Build.BackEnd
                         }
                     }
 
-                    if (_logTaskInputs && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents && outputs.Length > 0)
+                    if (_taskLoggingContext.LoggingService.LogDiagnosticEvents && outputs.Length > 0)
                     {
                         string parameterText = ItemGroupLoggingHelper.GetParameterText(
                             ResourceUtilities.FormatResourceString("OutputItemParameterMessagePrefix"),
@@ -1539,7 +1539,7 @@ namespace Microsoft.Build.BackEnd
                     if (joinedOutputs != null)
                     {
                         var outputString = joinedOutputs.ToString();
-                        if (_logTaskInputs && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents)
+                        if ((_logTaskInputs || _taskLoggingContext.LoggingService.LogDiagnosticEvents) && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents)
                         {
                             _taskLoggingContext.LogComment(MessageImportance.Low, "OutputPropertyLogMessage", outputTargetName, outputString);
                         }
@@ -1574,7 +1574,7 @@ namespace Microsoft.Build.BackEnd
                         }
                     }
 
-                    if (_logTaskInputs && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents && outputs.Length > 0)
+                    if (_taskLoggingContext.LoggingService.LogDiagnosticEvents && outputs.Length > 0)
                     {
                         string parameterText = ItemGroupLoggingHelper.GetParameterText(ResourceUtilities.FormatResourceString("OutputItemParameterMessagePrefix"), outputTargetName, outputs);
                         _taskLoggingContext.LogCommentFromText(MessageImportance.Low, parameterText);
@@ -1607,7 +1607,7 @@ namespace Microsoft.Build.BackEnd
                     if (joinedOutputs != null)
                     {
                         var outputString = joinedOutputs.ToString();
-                        if (_logTaskInputs && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents)
+                        if ((_logTaskInputs || _taskLoggingContext.LoggingService.LogDiagnosticEvents) && !_taskLoggingContext.LoggingService.OnlyLogCriticalEvents)
                         {
                             _taskLoggingContext.LogComment(MessageImportance.Low, "OutputPropertyLogMessage", outputTargetName, outputString);
                         }

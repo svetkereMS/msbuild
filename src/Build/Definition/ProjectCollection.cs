@@ -169,6 +169,8 @@ namespace Microsoft.Build.Evaluation
         /// </summary>
         private bool _onlyLogCriticalEvents;
 
+        private bool _logDiagnosticEvents;
+
         /// <summary>
         /// Whether reevaluation is temporarily disabled on projects in this collection.
         /// This is useful when the host expects to make a number of reads and writes 
@@ -255,6 +257,14 @@ namespace Microsoft.Build.Evaluation
         {
         }
 
+        public ProjectCollection(IDictionary<string, string> globalProperties, IEnumerable<ILogger> loggers,
+            IEnumerable<ForwardingLoggerRecord> remoteLoggers, ToolsetDefinitionLocations toolsetDefinitionLocations,
+            int maxNodeCount, bool onlyLogCriticalEvents)
+            : this(globalProperties, loggers, remoteLoggers, toolsetDefinitionLocations, maxNodeCount,
+                onlyLogCriticalEvents, logDiagnosticEvents: true)
+        {
+        }
+
         /// <summary>
         /// Instantiates a project collection with specified global properties and loggers and using the
         /// specified toolset locations, node count, and setting of onlyLogCriticalEvents.
@@ -268,17 +278,19 @@ namespace Microsoft.Build.Evaluation
         /// <param name="toolsetDefinitionLocations">The locations from which to load toolsets.</param>
         /// <param name="maxNodeCount">The maximum number of nodes to use for building.</param>
         /// <param name="onlyLogCriticalEvents">If set to true, only critical events will be logged.</param>
-        public ProjectCollection(IDictionary<string, string> globalProperties, IEnumerable<ILogger> loggers, IEnumerable<ForwardingLoggerRecord> remoteLoggers, ToolsetDefinitionLocations toolsetDefinitionLocations, int maxNodeCount, bool onlyLogCriticalEvents)
+        public ProjectCollection(IDictionary<string, string> globalProperties, IEnumerable<ILogger> loggers, IEnumerable<ForwardingLoggerRecord> remoteLoggers, ToolsetDefinitionLocations toolsetDefinitionLocations, int maxNodeCount, bool onlyLogCriticalEvents, bool logDiagnosticEvents)
         {
             _loadedProjects = new LoadedProjectCollection();
             _toolsetDefinitionLocations = toolsetDefinitionLocations;
             MaxNodeCount = maxNodeCount;
             ProjectRootElementCache = new ProjectRootElementCache(false /* do not automatically reload changed files from disk */);
             OnlyLogCriticalEvents = onlyLogCriticalEvents;
+            logDiagnosticEvents = false;
+            LogDiagnosticEvents = logDiagnosticEvents;
 
             try
             {
-                CreateLoggingService(maxNodeCount, onlyLogCriticalEvents);
+                CreateLoggingService(maxNodeCount, onlyLogCriticalEvents, logDiagnosticEvents);
 
                 RegisterLoggers(loggers);
                 RegisterForwardingLoggers(remoteLoggers);
@@ -630,6 +642,33 @@ namespace Microsoft.Build.Evaluation
                         _onlyLogCriticalEvents = value;
 
                         eventArgs = new ProjectCollectionChangedEventArgs(ProjectCollectionChangedState.OnlyLogCriticalEvents);
+                    }
+                }
+
+                OnProjectCollectionChangedIfNonNull(eventArgs);
+            }
+        }
+
+        public bool LogDiagnosticEvents
+        {
+            get
+            {
+                lock (_locker)
+                {
+                    return _logDiagnosticEvents;
+                }
+            }
+
+            set
+            {
+                ProjectCollectionChangedEventArgs eventArgs = null;
+                lock (_locker)
+                {
+                    if (_logDiagnosticEvents != value)
+                    {
+                        _logDiagnosticEvents = value;
+
+                        eventArgs = new ProjectCollectionChangedEventArgs(ProjectCollectionChangedState.LogDiagnosticEvents);
                     }
                 }
 
@@ -1202,7 +1241,7 @@ namespace Microsoft.Build.Evaluation
 
                 // UNDONE: Logging service should not shut down when all loggers are unregistered.
                 // VS unregisters all loggers on the same project collection often. To workaround this, we have to create it again now!
-                CreateLoggingService(MaxNodeCount, OnlyLogCriticalEvents);
+                CreateLoggingService(MaxNodeCount, OnlyLogCriticalEvents, LogDiagnosticEvents);
             }
 
             OnProjectCollectionChanged(new ProjectCollectionChangedEventArgs(ProjectCollectionChangedState.Loggers));
@@ -1660,11 +1699,12 @@ namespace Microsoft.Build.Evaluation
         /// <summary>
         /// Create a new logging service
         /// </summary>
-        private void CreateLoggingService(int maxCPUCount, bool onlyLogCriticalEvents)
+        private void CreateLoggingService(int maxCPUCount, bool onlyLogCriticalEvents, bool logDiagnosticEvents)
         {
             _loggingService = BackEnd.Logging.LoggingService.CreateLoggingService(LoggerMode.Synchronous, 0 /*Evaluation can be done as if it was on node "0"*/);
             _loggingService.MaxCPUCount = maxCPUCount;
             _loggingService.OnlyLogCriticalEvents = onlyLogCriticalEvents;
+            _loggingService.LogDiagnosticEvents = logDiagnosticEvents;
         }
 
 #if FEATURE_SYSTEM_CONFIGURATION

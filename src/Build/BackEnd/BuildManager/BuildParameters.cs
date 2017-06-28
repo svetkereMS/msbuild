@@ -200,6 +200,8 @@ namespace Microsoft.Build.Execution
         /// </summary>
         private bool _onlyLogCriticalEvents = false;
 
+        private bool _logDiagnosticEvents = false;
+
         /// <summary>
         /// A list of warnings to treat as errors.
         /// </summary>
@@ -279,6 +281,7 @@ namespace Microsoft.Build.Execution
             _onlyLogCriticalEvents = projectCollection.OnlyLogCriticalEvents;
             _toolsetDefinitionLocations = projectCollection.ToolsetLocations;
             _defaultToolsVersion = projectCollection.DefaultToolsVersion;
+            _logDiagnosticEvents = projectCollection.LogDiagnosticEvents;
 
             _globalProperties = new PropertyDictionary<ProjectPropertyInstance>(projectCollection.GlobalPropertiesCollection);
         }
@@ -329,6 +332,7 @@ namespace Microsoft.Build.Execution
             _useSynchronousLogging = other._useSynchronousLogging;
             _disableInProcNode = other._disableInProcNode;
             _logTaskInputs = other._logTaskInputs;
+            _logDiagnosticEvents = other._logDiagnosticEvents;
             _logInitialPropertiesAndItems = other._logInitialPropertiesAndItems;
             _warningsAsErrors = other._warningsAsErrors == null ? null : new HashSet<string>(other._warningsAsErrors, StringComparer.OrdinalIgnoreCase);
             _warningsAsMessages = other._warningsAsMessages == null ? null : new HashSet<string>(other._warningsAsMessages, StringComparer.OrdinalIgnoreCase);
@@ -597,6 +601,12 @@ namespace Microsoft.Build.Execution
         {
             get { return _onlyLogCriticalEvents; }
             set { _onlyLogCriticalEvents = value; }
+        }
+
+        public bool LogDiagnosticEvents
+        {
+            get { return _logDiagnosticEvents; }
+            set { _logDiagnosticEvents = value; }
         }
 
         /// <summary>
@@ -918,6 +928,7 @@ namespace Microsoft.Build.Execution
             translator.Translate(ref _shutdownInProcNodeOnBuildFinish);
             translator.Translate(ref _logTaskInputs);
             translator.Translate(ref _logInitialPropertiesAndItems);
+            translator.Translate(ref _logDiagnosticEvents);
 
             // ProjectRootElementCache is not transmitted.
             // ResetCaches is not transmitted.

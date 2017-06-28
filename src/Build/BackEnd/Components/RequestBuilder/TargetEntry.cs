@@ -352,7 +352,7 @@ namespace Microsoft.Build.BackEnd
                 _targetResult = new TargetResult(new TaskItem[0] { }, new WorkUnitResult(WorkUnitResultCode.Skipped, WorkUnitActionCode.Continue, null));
                 _state = TargetEntryState.Completed;
 
-                if (!projectLoggingContext.LoggingService.OnlyLogCriticalEvents)
+                if (projectLoggingContext.LoggingService.LogDiagnosticEvents)
                 {
                     // Expand the expression for the Log.
                     string expanded = _expander.ExpandIntoStringAndUnescape(_target.Condition, ExpanderOptions.ExpandPropertiesAndItems, _target.ConditionLocation);

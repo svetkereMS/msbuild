@@ -407,6 +407,8 @@ namespace Microsoft.Build.BackEnd.Logging
             }
         }
 
+        public bool LogDiagnosticEvents { get; set; } = true;
+
         /// <summary>
         /// Number of nodes in the system when the system is initially started
         /// </summary>
@@ -633,6 +635,7 @@ namespace Microsoft.Build.BackEnd.Logging
                 // Ask the component host if onlyLogCriticalEvents is true or false. If the host does
                 // not have this information default to false.
                 _onlyLogCriticalEvents = buildComponentHost.BuildParameters.OnlyLogCriticalEvents;
+                LogDiagnosticEvents = buildComponentHost.BuildParameters.LogDiagnosticEvents;
 
                 _serviceState = LoggingServiceState.Initialized;
             }
