@@ -8,10 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Microsoft.Build.Evaluation;
 using Xunit;
 using System.Text;
+using Microsoft.Build.Engine.UnitTests;
+using Microsoft.Build.Internal;
 
 namespace Microsoft.Build.UnitTests.Evaluation
 {
@@ -518,6 +521,54 @@ namespace Microsoft.Build.UnitTests.Evaluation
             IList<ProjectItem> items = ObjectModelHelpers.GetItemsFromFragment(content);
 
             Assert.Equal("0;6;7;8;9", String.Join(";", items.Select(i => i.EvaluatedInclude)));
+        }
+
+        [Fact]
+        public void LazyWildcardExpansionDoesNotEvaluateWildCardsIfNotReferenced()
+        {
+            var content = @"
+<Project>
+   <Import Project=`foo/*.props`/>
+   <ItemGroup>
+      <i Include=`**/foo/**/*.cs`/>
+      <i2 Include=`**/bar/**/*.cs`/>
+   </ItemGroup>
+
+   <ItemGroup>
+      <Item Include=`@(i)`/>
+      <FullPath Include=`@(i->%(FullPath))`/>
+      <RecursiveDir Include=`@(i->%(RecursiveDir))`/>
+   </ItemGroup>
+</Project>
+".Cleanup();
+
+            var import = @"
+<Project>
+   <PropertyGroup>
+      <FromImport>true</FromImport>
+   </PropertyGroup>
+</Project>
+".Cleanup();
+            using (var env = TestEnvironment.Create())
+            {
+                var projectFiles = env.CreateTestProjectWithFiles(content, new[] {"foo/extra.props", "foo/a.cs", "foo/b.cs", "bar/c.cs", "bar/d.cs"});
+
+                File.WriteAllText(projectFiles.CreatedFiles[0], import);
+
+                env.SetEnvironmentVariable("MsBuildSkipEagerWildCardEvaluationRegexes", ".*foo.*");
+
+                EngineFileUtilities.CaptureRegexes();
+
+                var project = new Project(projectFiles.ProjectFile);
+
+                Assert.Equal("true", project.GetPropertyValue("FromImport"));
+                Assert.Equal("**/foo/**/*.cs", project.GetConcatenatedItemsOfType("i"));
+                Assert.Equal("bar\\c.cs;bar\\d.cs", project.GetConcatenatedItemsOfType("i2"));
+
+                //Assert.Equal("foo/a.cs;foo/b.cs", project.GetConcatenatedItemsOfType("Item"));
+                //Assert.Equal("**/foo/**/*.cs", project.GetConcatenatedItemsOfType("FullPath"));
+                //Assert.Equal("**/foo/**/*.cs", project.GetConcatenatedItemsOfType("RecursiveDir"));
+            }
         }
     }
 }
