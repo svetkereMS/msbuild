@@ -6,6 +6,7 @@
 //-----------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Globalization;
 using System.Collections.Generic;
+using Microsoft.Build.Utilities;
 
 namespace Microsoft.Build.Shared
 {
@@ -38,6 +40,9 @@ namespace Microsoft.Build.Shared
 
         internal static readonly GetFileSystemEntries s_defaultGetFileSystemEntries = new GetFileSystemEntries(GetAccessibleFileSystemEntries);
         private static readonly DirectoryExists s_defaultDirectoryExists = new DirectoryExists(Directory.Exists);
+
+        private static readonly Lazy<ConcurrentDictionary<string, string[]>> s_cachedFileEnumerations = new Lazy<ConcurrentDictionary<string, string[]>>(() => new ConcurrentDictionary<string, string[]>(StringComparer.OrdinalIgnoreCase));
+        private static readonly Lazy<ConcurrentDictionary<string, object>> s_cachedFileEnumerationsLock = new Lazy<ConcurrentDictionary<string, object>>(() => new ConcurrentDictionary<string, object>(StringComparer.OrdinalIgnoreCase));
 
         /// <summary>
         /// Cache of the list of invalid path characters, because this method returns a clone (for security reasons)
@@ -1391,8 +1396,45 @@ namespace Microsoft.Build.Shared
             IEnumerable<string> excludeSpecsUnescaped = null
         )
         {
-            string[] files = GetFiles(projectDirectoryUnescaped, filespecUnescaped, excludeSpecsUnescaped, s_defaultGetFileSystemEntries, s_defaultDirectoryExists);
-            return files;
+            if (Traits.Instance.MSBuildCacheFileEnumerations)
+            {
+                string filesKey = $"{projectDirectoryUnescaped}{filespecUnescaped}";
+                string[] files;
+                if (!s_cachedFileEnumerations.Value.TryGetValue(filesKey, out files))
+                {
+                    object locks = s_cachedFileEnumerationsLock.Value.GetOrAdd(filesKey, _ => new object());
+                    lock (locks)
+                    {
+                        if (!s_cachedFileEnumerations.Value.TryGetValue(filesKey, out files))
+                        {
+                            files =
+                                s_cachedFileEnumerations.Value.GetOrAdd(
+                                    filesKey,
+                                    (_) =>
+                                        GetFiles(
+                                            projectDirectoryUnescaped,
+                                            filespecUnescaped,
+                                            excludeSpecsUnescaped,
+                                            s_defaultGetFileSystemEntries,
+                                            s_defaultDirectoryExists));
+                        }
+                    }
+                }
+
+                var filesToReturn = new string[files.Length];
+                Array.Copy(files, filesToReturn, files.Length);
+                return filesToReturn;
+            }
+            else
+            {
+                string[] files = GetFiles(
+                    projectDirectoryUnescaped,
+                    filespecUnescaped,
+                    excludeSpecsUnescaped,
+                    s_defaultGetFileSystemEntries,
+                    s_defaultDirectoryExists);
+                return files;
+            }
         }
 
         enum SearchAction
