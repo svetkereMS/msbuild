@@ -3,10 +3,12 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.Build.Evaluation;
 
 namespace Microsoft.Build.Evaluation
@@ -124,9 +126,38 @@ namespace Microsoft.Build.Evaluation
             }
         }
 
-        // An array of hashtables with cached expression trees for all the combinations of condition strings 
-        // and parser options
-        private static volatile Hashtable[] s_cachedExpressionTrees = new Hashtable[(int)ParserOptions.AllowAll + 1];
+        // Implements a pool of expression trees for each condition.
+        // This is because an expression tree is a mutually exclusive resource (has non thread safe state while it evaluates)
+        // During high demand, new expression trees are added to the pool.
+        private struct ExpressionTreeForCurrentOptionsWithSize
+        {
+            // condition -> pool of expression trees
+            private readonly ConcurrentDictionary<string, ConcurrentStack<GenericExpressionNode>> conditionPools;
+            private int m_optimisticSize;
+
+            public int OptimisticSize => m_optimisticSize;
+
+            public ExpressionTreeForCurrentOptionsWithSize(ConcurrentDictionary<string, ConcurrentStack<GenericExpressionNode>> conditionPools)
+            {
+                this.conditionPools = conditionPools;
+                m_optimisticSize = conditionPools.Count;
+            }
+
+            public ConcurrentStack<GenericExpressionNode> GetOrAdd(string condition, Func<string, ConcurrentStack<GenericExpressionNode>> addFunc)
+            {
+                ConcurrentStack<GenericExpressionNode> stack;
+                if (!conditionPools.TryGetValue(condition, out stack))
+                {
+                    Interlocked.Increment(ref m_optimisticSize);
+                    stack = conditionPools.GetOrAdd(condition, addFunc);
+                }
+
+                return stack;
+            }
+        }
+
+        // Cached expression trees for all the combinations of condition strings and parser options
+        private static volatile ConcurrentDictionary<int, ExpressionTreeForCurrentOptionsWithSize> s_cachedExpressionTrees = new ConcurrentDictionary<int, ExpressionTreeForCurrentOptionsWithSize>();
 
         /// <summary>
         /// For debugging leaks, a way to disable caching expression trees, to reduce noise
@@ -194,41 +225,45 @@ namespace Microsoft.Build.Evaluation
             // If the condition wasn't empty, there must be a location for it
             ErrorUtilities.VerifyThrowArgumentNull(elementLocation, "elementLocation");
 
-            Hashtable cachedExpressionTreesForCurrentOptions = s_cachedExpressionTrees[(int)options];
+            ExpressionTreeForCurrentOptionsWithSize cachedExpressionTreesForCurrentOptions = s_cachedExpressionTrees.GetOrAdd(
+                (int)options,
+                _ => new ExpressionTreeForCurrentOptionsWithSize(new ConcurrentDictionary<string, ConcurrentStack<GenericExpressionNode>>(StringComparer.Ordinal)));
 
-            // We only need to lock on writes to the table
-            if (cachedExpressionTreesForCurrentOptions == null)
+            if (cachedExpressionTreesForCurrentOptions.OptimisticSize > 3000)
             {
-                // Given property functions, casing in conditional expressions isn't necessarily ignored.
-                cachedExpressionTreesForCurrentOptions = new Hashtable(50, StringComparer.Ordinal);
-
-                lock (s_cachedExpressionTrees)
-                {
-                    s_cachedExpressionTrees[(int)options] = cachedExpressionTreesForCurrentOptions;
-                }
-            }
-
-            // VS stress tests could fill up this cache without end, for example if they use
-            // random configuration names - those appear in conditional expressions.
-            // So if we hit a limit that we should never hit in normal circumstances in VS,
-            // and rarely, periodically hit in normal circumstances in large tree builds,
-            // just clear out the cache. It can start repopulating again. Some kind of prioritized
-            // aging isn't worth it: although the hit rate of these caches is excellent (nearly 100%)
-            // the cost of reparsing expressions should the cache be cleared is not particularly large.
-            // Loading Australian Government in VS, there are 3 of these tables, two with about 50
-            // entries and one with about 650 entries. So 3000 seems large enough.
-            if (cachedExpressionTreesForCurrentOptions.Count > 3000) // threadsafe
-            {
-                lock (cachedExpressionTreesForCurrentOptions)
-                {
-                    cachedExpressionTreesForCurrentOptions.Clear();
-                }
+                // VS stress tests could fill up this cache without end, for example if they use
+                // random configuration names - those appear in conditional expressions.
+                // So if we hit a limit that we should never hit in normal circumstances in VS,
+                // and rarely, periodically hit in normal circumstances in large tree builds,
+                // just clear out the cache. It can start repopulating again. Some kind of prioritized
+                // aging isn't worth it: although the hit rate of these caches is excellent (nearly 100%)
+                // the cost of reparsing expressions should the cache be cleared is not particularly large.
+                // Loading Australian Government in VS, there are 3 of these tables, two with about 50
+                // entries and one with about 650 entries. So 3000 seems large enough.
+                cachedExpressionTreesForCurrentOptions = s_cachedExpressionTrees.AddOrUpdate(
+                    (int)options,
+                    _ =>
+                        new ExpressionTreeForCurrentOptionsWithSize(
+                            new ConcurrentDictionary<string, ConcurrentStack<GenericExpressionNode>>(StringComparer.Ordinal)),
+                    (key, existing) =>
+                    {
+                        if (existing.OptimisticSize > 3000)
+                        {
+                            return
+                                new ExpressionTreeForCurrentOptionsWithSize(
+                                    new ConcurrentDictionary<string, ConcurrentStack<GenericExpressionNode>>(StringComparer.Ordinal));
+                        }
+                        else
+                        {
+                            return existing;
+                        }
+                    });
             }
 
             // Try and see if we have an expression tree for this condition already
-            GenericExpressionNode parsedExpression = (GenericExpressionNode)cachedExpressionTreesForCurrentOptions[condition];
-
-            if (parsedExpression == null)
+            var expressionStack = cachedExpressionTreesForCurrentOptions.GetOrAdd(condition, _ => new ConcurrentStack<GenericExpressionNode>());
+            GenericExpressionNode parsedExpression;
+            if (!expressionStack.TryPop(out parsedExpression))
             {
                 Parser conditionParser = new Parser();
 
@@ -238,18 +273,6 @@ namespace Microsoft.Build.Evaluation
                 #endregion
 
                 parsedExpression = conditionParser.Parse(condition, options, elementLocation);
-
-                // It's possible two threads will add a different tree to the same entry in the hashtable, 
-                // but it should be rare and it's not a problem - the previous entry will be thrown away.
-                // We could ensure no dupes with double check locking but it's not really necessary here.
-                // Also, we don't want to lock on every read.
-                lock (cachedExpressionTreesForCurrentOptions)
-                {
-                    if (!s_disableExpressionCaching)
-                    {
-                        cachedExpressionTreesForCurrentOptions[condition] = parsedExpression;
-                    }
-                }
             }
 
             bool result;
@@ -267,6 +290,10 @@ namespace Microsoft.Build.Evaluation
                 finally
                 {
                     parsedExpression.ResetState();
+                    if (!s_disableExpressionCaching)
+                    {
+                        expressionStack.Push(parsedExpression);
+                    }
                 }
             }
 
