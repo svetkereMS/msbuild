@@ -2,6 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+#if !CLR2COMPATIBILITY
+using System.Collections.Concurrent;
+#endif
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -13,6 +16,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Threading;
+using Microsoft.Build.Utilities;
 
 namespace Microsoft.Build.Shared
 {
@@ -83,6 +87,10 @@ namespace Microsoft.Build.Shared
         };
 
         private static readonly char[] Slashes = { '/', '\\' };
+
+#if !CLR2COMPATIBILITY
+        private static ConcurrentDictionary<string, bool> FileExistenceCache = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+#endif
 
         /// <summary>
         /// Retrieves the MSBuild runtime cache directory
@@ -852,7 +860,18 @@ namespace Microsoft.Build.Shared
                 NativeMethodsShared.WIN32_FILE_ATTRIBUTE_DATA data = new NativeMethodsShared.WIN32_FILE_ATTRIBUTE_DATA();
                 bool success = false;
 
+#if CLR2COMPATIBILITY
                 success = NativeMethodsShared.GetFileAttributesEx(fullPath, 0, ref data);
+#else
+                if (Traits.Instance.CacheFileExistence)
+                {
+                    success = FileExistenceCache.GetOrAdd(fullPath, path => NativeMethodsShared.GetFileAttributesEx(path, 0, ref data));
+                }
+                else
+                {
+                    success = NativeMethodsShared.GetFileAttributesEx(fullPath, 0, ref data);
+                }
+#endif
 
                 return success;
             }
