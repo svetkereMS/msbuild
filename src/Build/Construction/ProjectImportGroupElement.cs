@@ -16,6 +16,14 @@ namespace Microsoft.Build.Construction
     public class ProjectImportGroupElement : ProjectElementContainer
     {
         #region Constructors
+        /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectImportGroupElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
 
         /// <summary>
         /// Initialize a parented ProjectImportGroupElement

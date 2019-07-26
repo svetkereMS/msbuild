@@ -17,6 +17,14 @@ namespace Microsoft.Build.Construction
     public class ProjectWhenElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectWhenElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// Initialize a parented ProjectWhenElement
         /// </summary>
         internal ProjectWhenElement(XmlElement xmlElement, ProjectChooseElement parent, ProjectRootElement containingProject)

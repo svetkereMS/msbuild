@@ -18,6 +18,14 @@ namespace Microsoft.Build.Construction
     public class ProjectChooseElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectChooseElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// Initialize a parented ProjectChooseElement
         /// </summary>
         internal ProjectChooseElement(XmlElement xmlElement, ProjectElementContainer parent, ProjectRootElement containingProject)
@@ -83,6 +91,8 @@ namespace Microsoft.Build.Construction
         /// </summary>
         internal static ProjectChooseElement CreateDisconnected(ProjectRootElement containingProject)
         {
+            ErrorUtilities.VerifyThrow(containingProject.Link == null, "External project");
+
             XmlElementWithLocation element = containingProject.CreateElement(XMakeElements.choose);
             return new ProjectChooseElement(element, containingProject);
         }

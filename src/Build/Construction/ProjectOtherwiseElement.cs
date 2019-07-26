@@ -16,6 +16,14 @@ namespace Microsoft.Build.Construction
     public class ProjectOtherwiseElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectOtherwiseElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// Initialize a parented ProjectOtherwiseElement
         /// </summary>
         internal ProjectOtherwiseElement(XmlElementWithLocation xmlElement, ProjectElementContainer parent, ProjectRootElement project)

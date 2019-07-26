@@ -19,6 +19,14 @@ namespace Microsoft.Build.Construction
     public class UsingTaskParameterGroupElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal UsingTaskParameterGroupElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// Initialize a parented UsingTaskParameterGroupElement
         /// </summary>
         internal UsingTaskParameterGroupElement(XmlElementWithLocation xmlElement, ProjectElementContainer parent, ProjectRootElement containingProject)
@@ -124,6 +132,7 @@ namespace Microsoft.Build.Construction
             // that it is not empty
             if (parentUsingTask.TaskFactory.Length == 0)
             {
+                ErrorUtilities.VerifyThrow(parentUsingTask.Link == null, "TaskFactory");
                 ProjectXmlUtilities.VerifyThrowProjectRequiredAttribute(parent.XmlElement, "TaskFactory");
             }
 

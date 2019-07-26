@@ -17,6 +17,14 @@ namespace Microsoft.Build.Construction
     public class ProjectOutputElement : ProjectElement
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectOutputElement(ProjectElementLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// Initialize a parented ProjectOutputElement
         /// </summary>
         internal ProjectOutputElement(XmlElement xmlElement, ProjectTaskElement parent, ProjectRootElement containingProject)
@@ -42,15 +50,14 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                return ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.taskParameter);
+                return GetAttributeValue(XMakeAttributes.taskParameter);
             }
 
             [DebuggerStepThrough]
             set
             {
                 ErrorUtilities.VerifyThrowArgumentLength(value, nameof(value));
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.taskParameter, value);
-                MarkDirty("Set Output TaskParameter {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.taskParameter, value, "Set Output TaskParameter {0}", value);
             }
         }
 
@@ -77,14 +84,13 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                return ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.itemName);
+                return GetAttributeValue(XMakeAttributes.itemName);
             }
 
             set
             {
                 ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(PropertyName), "OM_EitherAttributeButNotBoth", XmlElement.Name, XMakeAttributes.itemName, XMakeAttributes.propertyName);
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.itemName, value);
-                MarkDirty("Set Output ItemType {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.itemName, value, "Set Output ItemType {0}", value);
             }
         }
 
@@ -98,31 +104,30 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                return ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.propertyName);
+                return GetAttributeValue(XMakeAttributes.propertyName);
             }
 
             set
             {
                 ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(ItemType), "OM_EitherAttributeButNotBoth", XmlElement.Name, XMakeAttributes.itemName, XMakeAttributes.propertyName);
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.propertyName, value);
-                MarkDirty("Set Output PropertyName {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.propertyName, value, "Set Output PropertyName {0}", value);
             }
         }
 
         /// <summary>
         /// Location of the task parameter attribute
         /// </summary>
-        public ElementLocation TaskParameterLocation => XmlElement.GetAttributeLocation(XMakeAttributes.taskParameter);
+        public ElementLocation TaskParameterLocation => GetAttributeLocation(XMakeAttributes.taskParameter);
 
         /// <summary>
         /// Location of the property name attribute, if any
         /// </summary>
-        public ElementLocation PropertyNameLocation => XmlElement.GetAttributeLocation(XMakeAttributes.propertyName);
+        public ElementLocation PropertyNameLocation => GetAttributeLocation(XMakeAttributes.propertyName);
 
         /// <summary>
         /// Location of the item type attribute, if any
         /// </summary>
-        public ElementLocation ItemTypeLocation => XmlElement.GetAttributeLocation(XMakeAttributes.itemName);
+        public ElementLocation ItemTypeLocation => GetAttributeLocation(XMakeAttributes.itemName);
 
         /// <summary>
         /// Creates an unparented ProjectOutputElement, wrapping an unparented XmlElement.

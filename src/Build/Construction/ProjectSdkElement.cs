@@ -13,6 +13,14 @@ namespace Microsoft.Build.Construction
     public class ProjectSdkElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectSdkElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         ///     Initialize a parented ProjectSdkElement
         /// </summary>
         internal ProjectSdkElement(XmlElementWithLocation xmlElement, ProjectRootElement parent,
@@ -34,12 +42,11 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string Name
         {
-            get => ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.sdkName);
+            get => GetAttributeValue(XMakeAttributes.sdkName);
             set
             {
                 ErrorUtilities.VerifyThrowArgumentLength(value, XMakeAttributes.sdkName);
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.sdkName, value);
-                MarkDirty($"Set SDK Name to {value}", XMakeAttributes.sdkName);
+                SetOrRemoveAttribute(XMakeAttributes.sdkName, value, $"Set SDK Name to {value}", XMakeAttributes.sdkName);
             }
         }
 
@@ -48,11 +55,10 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string Version
         {
-            get => ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.sdkVersion);
+            get => GetAttributeValue(XMakeAttributes.sdkVersion);
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.sdkVersion, value);
-                MarkDirty($"Set SDK Version to {value}", XMakeAttributes.sdkVersion);
+                SetOrRemoveAttribute(XMakeAttributes.sdkVersion, value, $"Set SDK Version to {value}", XMakeAttributes.sdkVersion);
             }
         }
 
@@ -61,11 +67,10 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string MinimumVersion
         {
-            get => ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.sdkMinimumVersion);
+            get => GetAttributeValue(XMakeAttributes.sdkMinimumVersion);
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.sdkMinimumVersion, value);
-                MarkDirty($"Set SDK MinimumVersion to {value}", XMakeAttributes.sdkMinimumVersion);
+                SetOrRemoveAttribute(XMakeAttributes.sdkMinimumVersion, value, $"Set SDK MinimumVersion to {value}", XMakeAttributes.sdkMinimumVersion);
             }
         }
 

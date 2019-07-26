@@ -17,6 +17,14 @@ namespace Microsoft.Build.Construction
     public class ProjectItemDefinitionElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectItemDefinitionElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// Initialize a ProjectItemDefinitionElement instance from a node read from a project file
         /// </summary>
         internal ProjectItemDefinitionElement(XmlElement xmlElement, ProjectItemDefinitionGroupElement parent, ProjectRootElement containingProject)
@@ -36,7 +44,7 @@ namespace Microsoft.Build.Construction
         /// <summary>
         /// Gets the definition's type.
         /// </summary>
-        public string ItemType => XmlElement.Name;
+        public string ItemType => ElementName;
 
         /// <summary>
         /// Get any child metadata definitions.

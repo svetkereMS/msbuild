@@ -11,15 +11,37 @@ using Microsoft.Build.Shared;
 using Microsoft.Build.Collections;
 
 using ProjectXmlUtilities = Microsoft.Build.Internal.ProjectXmlUtilities;
+using System.Collections;
 
 namespace Microsoft.Build.Construction
 {
+    public abstract class ProjectTaskElementLink : ProjectElementContainerLink
+    {
+        public abstract IDictionary<string, string> GetParameters();
+        public abstract IEnumerable<KeyValuePair<string, ElementLocation>> GetParametersLocations();
+        public abstract string GetParameter(string name);
+        public abstract void SetParameter(string name, string unevaluatedValue);
+        public abstract void RemoveParameter(string name);
+
+        public abstract void RemoveAllParameters();
+    }
+
     /// <summary>
     /// ProjectTaskElement represents the Task element in the MSBuild project.
     /// </summary>
     [DebuggerDisplay("{Name} Condition={Condition} ContinueOnError={ContinueOnError} MSBuildRuntime={MSBuildRuntime} MSBuildArchitecture={MSBuildArchitecture} #Outputs={Count}")]
     public class ProjectTaskElement : ProjectElementContainer
     {
+        internal ProjectTaskElementLink TaskLink => (ProjectTaskElementLink)Link;
+
+        /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectTaskElement(ProjectTaskElementLink link)
+            : base(link)
+        {
+        }
+
         /// <summary>
         /// The parameters (excepting condition and continue-on-error)
         /// </summary>
@@ -57,14 +79,13 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                return ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.continueOnError);
+                return GetAttributeValue(XMakeAttributes.continueOnError);
             }
 
             [DebuggerStepThrough]
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.continueOnError, value);
-                MarkDirty("Set task ContinueOnError {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.continueOnError, value, "Set task ContinueOnError {0}", value);
             }
         }
 
@@ -78,14 +99,13 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                return ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.msbuildRuntime);
+                return GetAttributeValue(XMakeAttributes.msbuildRuntime);
             }
 
             [DebuggerStepThrough]
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.msbuildRuntime, value);
-                MarkDirty("Set task MSBuildRuntime {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.msbuildRuntime, value, "Set task MSBuildRuntime {0}", value);
             }
         }
 
@@ -99,21 +119,20 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                return ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.msbuildArchitecture);
+                return GetAttributeValue(XMakeAttributes.msbuildArchitecture);
             }
 
             [DebuggerStepThrough]
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.msbuildArchitecture, value);
-                MarkDirty("Set task MSBuildArchitecture {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.msbuildArchitecture, value, "Set task MSBuildArchitecture {0}", value);
             }
         }
 
         /// <summary>
         /// Gets the task name
         /// </summary>
-        public string Name => XmlElement.Name;
+        public string Name => ElementName;
 
         /// <summary>
         /// Gets any output children.
@@ -130,6 +149,11 @@ namespace Microsoft.Build.Construction
         {
             get
             {
+                if (Link != null)
+                {
+                    return TaskLink.GetParameters();
+                }
+
                 lock (_locker)
                 {
                     EnsureParametersInitialized();
@@ -140,7 +164,6 @@ namespace Microsoft.Build.Construction
                     {
                         parametersClone[entry.Key] = entry.Value.Item1;
                     }
-
                     return new ReadOnlyDictionary<string, string>(parametersClone);
                 }
             }
@@ -156,10 +179,14 @@ namespace Microsoft.Build.Construction
         {
             get
             {
+                if (Link != null)
+                {
+                    return TaskLink.GetParametersLocations();
+                }
+
                 lock (_locker)
                 {
                     EnsureParametersInitialized();
-
                     var parameterLocations = new List<KeyValuePair<string, ElementLocation>>();
 
                     foreach (KeyValuePair<string, Tuple<string, ElementLocation>> entry in _parameters)
@@ -176,19 +203,19 @@ namespace Microsoft.Build.Construction
         /// Location of the "ContinueOnError" attribute on this element, if any.
         /// If there is no such attribute, returns null;
         /// </summary>
-        public ElementLocation ContinueOnErrorLocation => XmlElement.GetAttributeLocation(XMakeAttributes.continueOnError);
+        public ElementLocation ContinueOnErrorLocation => GetAttributeLocation(XMakeAttributes.continueOnError);
 
         /// <summary>
         /// Location of the "MSBuildRuntime" attribute on this element, if any.
         /// If there is no such attribute, returns null;
         /// </summary>
-        public ElementLocation MSBuildRuntimeLocation => XmlElement.GetAttributeLocation(XMakeAttributes.msbuildRuntime);
+        public ElementLocation MSBuildRuntimeLocation => GetAttributeLocation(XMakeAttributes.msbuildRuntime);
 
         /// <summary>
         /// Location of the "MSBuildArchitecture" attribute on this element, if any.
         /// If there is no such attribute, returns null;
         /// </summary>
-        public ElementLocation MSBuildArchitectureLocation => XmlElement.GetAttributeLocation(XMakeAttributes.msbuildArchitecture);
+        public ElementLocation MSBuildArchitectureLocation => GetAttributeLocation(XMakeAttributes.msbuildArchitecture);
 
         /// <summary>
         /// Retrieves a copy of the parameters as used during evaluation.
@@ -197,6 +224,8 @@ namespace Microsoft.Build.Construction
         {
             get
             {
+                ErrorUtilities.VerifyThrow(Link == null, "External project");
+
                 lock (_locker)
                 {
                     EnsureParametersInitialized();
@@ -272,6 +301,11 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string GetParameter(string name)
         {
+            if (Link != null)
+            {
+                return TaskLink.GetParameter(name);
+            }
+
             lock (_locker)
             {
                 ErrorUtilities.VerifyThrowArgumentLength(name, nameof(name));
@@ -292,6 +326,12 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public void SetParameter(string name, string unevaluatedValue)
         {
+            if (Link != null)
+            {
+                TaskLink.SetParameter(name, unevaluatedValue);
+                return;
+            }
+
             lock (_locker)
             {
                 ErrorUtilities.VerifyThrowArgumentLength(name, nameof(name));
@@ -310,6 +350,12 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public void RemoveParameter(string name)
         {
+            if (Link != null)
+            {
+                TaskLink.RemoveParameter(name);
+                return;
+            }
+
             lock (_locker)
             {
                 _parameters = null;
@@ -324,6 +370,12 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public void RemoveAllParameters()
         {
+            if (Link != null)
+            {
+                TaskLink.RemoveAllParameters();
+                return;
+            }
+
             lock (_locker)
             {
                 _parameters = null;

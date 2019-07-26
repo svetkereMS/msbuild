@@ -17,6 +17,14 @@ namespace Microsoft.Build.Construction
     public class ProjectItemGroupElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectItemGroupElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// True if it is known that no child items have wildcards in their
         /// include. An optimization helping Project.AddItem.
         /// Only reliable if it is true.
@@ -57,6 +65,11 @@ namespace Microsoft.Build.Construction
         {
             get
             {
+                if (Link != null)
+                {
+                    return Count == 0;
+                }
+
                 if (Count == 0)
                 {
                     _definitelyAreNoChildrenWithWildcards = true;

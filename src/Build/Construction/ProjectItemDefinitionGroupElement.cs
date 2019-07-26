@@ -17,6 +17,14 @@ namespace Microsoft.Build.Construction
     public class ProjectItemDefinitionGroupElement : ProjectElementContainer
     {
         /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectItemDefinitionGroupElement(ProjectElementContainerLink link)
+            : base(link)
+        {
+        }
+
+        /// <summary>
         /// Initialize a parented ProjectItemDefinitionGroupElement
         /// </summary>
         internal ProjectItemDefinitionGroupElement(XmlElement xmlElement, ProjectRootElement parent, ProjectRootElement containingProject)

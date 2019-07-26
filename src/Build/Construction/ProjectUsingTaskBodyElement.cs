@@ -8,12 +8,27 @@ using ProjectXmlUtilities = Microsoft.Build.Internal.ProjectXmlUtilities;
 
 namespace Microsoft.Build.Construction
 {
+    public abstract class ProjectUsingTaskBodyElementLink : ProjectElementLink
+    {
+        public abstract string TaskBody { get; set; }
+    }
+
     /// <summary>
     /// ProjectUsingTaskBodyElement class represents the Task element under the using task element in the MSBuild project.
     /// </summary>
     [DebuggerDisplay("Evaluate={Evaluate} TaskBody={TaskBody}")]
     public class ProjectUsingTaskBodyElement : ProjectElement
     {
+        internal ProjectUsingTaskBodyElementLink UsingTaskBodyLink => (ProjectUsingTaskBodyElementLink)Link;
+
+        /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectUsingTaskBodyElement(ProjectUsingTaskBodyElementLink link)
+            : base(link)
+        {
+        }
+
         /// <summary>
         /// Initialize a parented ProjectUsingTaskBodyElement
         /// </summary>
@@ -48,10 +63,16 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string TaskBody
         {
-            get => Internal.Utilities.GetXmlNodeInnerContents(XmlElement);
+            get => Link != null ? UsingTaskBodyLink.TaskBody : Internal.Utilities.GetXmlNodeInnerContents(XmlElement);
 
             set
             {
+                if (Link != null)
+                {
+                    UsingTaskBodyLink.TaskBody = value;
+                    return;
+                }
+
                 ErrorUtilities.VerifyThrowArgumentNull(value, nameof(TaskBody));
                 Internal.Utilities.SetXmlNodeInnerContents(XmlElement, value);
                 MarkDirty("Set usingtask body {0}", value);
@@ -66,7 +87,7 @@ namespace Microsoft.Build.Construction
         {
             get
             {
-                string evaluateAttribute = ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.evaluate);
+                string evaluateAttribute = GetAttributeValue(XMakeAttributes.evaluate);
 
                 if (evaluateAttribute.Length == 0)
                 {
@@ -78,8 +99,7 @@ namespace Microsoft.Build.Construction
 
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.evaluate, value);
-                MarkDirty("Set usingtask Evaluate {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.evaluate, value, "Set usingtask Evaluate {0}", value);
             }
         }
 
@@ -100,7 +120,7 @@ namespace Microsoft.Build.Construction
         /// If there is no such attribute, returns the location of the element,
         /// in lieu of the default value it uses for the attribute.
         /// </summary>
-        public ElementLocation EvaluateLocation => XmlElement.GetAttributeLocation(XMakeAttributes.evaluate) ?? Location;
+        public ElementLocation EvaluateLocation => GetAttributeLocation(XMakeAttributes.evaluate) ?? Location;
 
         /// <summary>
         /// Creates an unparented ProjectUsingTaskBodyElement, wrapping an unparented XmlElement.
@@ -145,6 +165,7 @@ namespace Microsoft.Build.Construction
             // that it is not empty
             if (parentUsingTask.TaskFactory.Length == 0)
             {
+                ErrorUtilities.VerifyThrow(parentUsingTask.Link == null, "TaskFactory");
                 ProjectXmlUtilities.VerifyThrowProjectRequiredAttribute(parent.XmlElement, "TaskFactory");
             }
 

@@ -7,6 +7,12 @@ using Microsoft.Build.Internal;
 
 namespace Microsoft.Build.Construction
 {
+    public abstract class ProjectPropertyElementLink : ProjectElementLink
+    {
+        public abstract string Value { get; set; }
+        public abstract void ChangeName(string newName);
+    }
+
     /// <summary>
     /// ProjectPropertyElement class represents the Property element in the MSBuild project.
     /// </summary>
@@ -19,6 +25,16 @@ namespace Microsoft.Build.Construction
     [DebuggerDisplay("{Name} Value={Value} Condition={Condition}")]
     public class ProjectPropertyElement : ProjectElement
     {
+        internal ProjectPropertyElementLink PropertyLink => (ProjectPropertyElementLink)Link;
+
+        /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectPropertyElement(ProjectPropertyElementLink link)
+            : base(link)
+        {
+        }
+
         /// <summary>
         /// Initialize a parented ProjectPropertyElement
         /// </summary>
@@ -41,7 +57,7 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string Name
         {
-            get => XmlElement.Name;
+            get => ElementName;
             set => ChangeName(value);
         }
 
@@ -51,11 +67,16 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string Value
         {
-            get => Internal.Utilities.GetXmlNodeInnerContents(XmlElement);
+            get => Link != null ? PropertyLink.Value : Internal.Utilities.GetXmlNodeInnerContents(XmlElement);
 
             set
             {
                 ErrorUtilities.VerifyThrowArgumentNull(value, nameof(Value));
+                if (Link != null)
+                {
+                    PropertyLink.Value = value;
+                    return;
+                }
 
                 // Visual Studio has a tendency to set properties to their existing value.
                 if (Value != value)
@@ -93,6 +114,11 @@ namespace Microsoft.Build.Construction
             ErrorUtilities.VerifyThrowArgumentLength(newName, nameof(newName));
             XmlUtilities.VerifyThrowArgumentValidElementName(newName);
             ErrorUtilities.VerifyThrowArgument(!XMakeElements.ReservedItemNames.Contains(newName), "CannotModifyReservedProperty", newName);
+            if (Link != null)
+            {
+                PropertyLink.ChangeName(newName);
+                return;
+            }
 
             // Because the element was created from our special XmlDocument, we know it's
             // an XmlElementWithLocation.

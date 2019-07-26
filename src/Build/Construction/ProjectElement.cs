@@ -11,6 +11,28 @@ using ProjectXmlUtilities = Microsoft.Build.Internal.ProjectXmlUtilities;
 
 namespace Microsoft.Build.Construction
 {
+    public abstract class ProjectElementLink
+    {
+        public abstract ProjectElementContainer Parent { get; }
+        public abstract ProjectRootElement ContainingProject { get; }
+        public abstract string ElementName { get; }
+        public abstract string OuterElement { get; }
+        public abstract bool ExpressedAsAttribute { get; set; }
+
+        public abstract ProjectElement PreviousSibling { get; }
+        public abstract ProjectElement NextSibling { get; }
+
+        public abstract ElementLocation Location { get; }
+
+        public abstract ElementLocation GetAttributeLocation(string attributeName);
+
+        public abstract string GetAttributeValue(string attributeName, bool nullIfNotExists);
+
+        public abstract void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param);
+
+        public abstract void CopyFrom(ProjectElement element);
+    }
+
     /// <summary>
     /// Abstract base class for MSBuild construction object model elements. 
     /// </summary>
@@ -27,6 +49,8 @@ namespace Microsoft.Build.Construction
         private string _condition;
 
         private bool _expressedAsAttribute;
+        private ProjectElement _previousSibling;
+        private ProjectElement _nextSibling;
 
         /// <summary>
         /// Constructor called by ProjectRootElement only.
@@ -37,6 +61,18 @@ namespace Microsoft.Build.Construction
         /// </comment>
         internal ProjectElement()
         {
+        }
+
+        /// <summary>
+        /// External projects support
+        /// </summary>
+        internal ProjectElement(ProjectElementLink link)
+        {
+            ErrorUtilities.VerifyThrowArgumentNull(link, nameof(link));
+
+            Link = link;
+            _parent = link.Parent;
+            ContainingProject = link.ContainingProject;
         }
 
         /// <summary>
@@ -62,10 +98,14 @@ namespace Microsoft.Build.Construction
         /// </remarks>
         internal virtual bool ExpressedAsAttribute
         {
-            get => _expressedAsAttribute;
+            get => Link != null ? Link.ExpressedAsAttribute : _expressedAsAttribute;
             set
             {
-                if (value != _expressedAsAttribute)
+                if (Link != null)
+                {
+                    Link.ExpressedAsAttribute = value;
+                }
+                else if (value != _expressedAsAttribute)
                 {
                     Parent?.RemoveFromXml(this);
                     _expressedAsAttribute = value;
@@ -90,17 +130,13 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                // No thread-safety lock required here because many reader threads would set the same value to the field.
-                return _condition ??
-                       (_condition = ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.condition));
+                return GetAttributeValue(XMakeAttributes.condition, ref _condition);
             }
 
             [DebuggerStepThrough]
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.condition, value);
-                _condition = value;
-                MarkDirty("Set condition {0}", _condition);
+                SetOrRemoveAttribute(XMakeAttributes.condition, value, ref _condition, "Set condition {0}", value);
             }
         }
 
@@ -114,14 +150,13 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
-                return ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.label);
+                return GetAttributeValue(XMakeAttributes.label);
             }
 
             [DebuggerStepThrough]
             set
             {
-                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.label, value);
-                MarkDirty("Set label {0}", value);
+                SetOrRemoveAttribute(XMakeAttributes.label, value, "Set label {0}", value);
             }
         }
 
@@ -163,7 +198,7 @@ namespace Microsoft.Build.Construction
         }
 
         /// <inheritdoc/>
-        public string OuterElement => XmlElement.OuterXml;
+        public string OuterElement => Link != null ? Link.OuterElement : XmlElement.OuterXml;
 
         /// <summary>
         /// All parent elements of this element, going up to the ProjectRootElement.
@@ -193,9 +228,9 @@ namespace Microsoft.Build.Construction
         public ProjectElement PreviousSibling
         {
             [DebuggerStepThrough]
-            get;
+            get => Link != null? Link.PreviousSibling : _previousSibling;
             [DebuggerStepThrough]
-            internal set;
+            internal set => _previousSibling = value;
         }
 
         /// <summary>
@@ -208,9 +243,9 @@ namespace Microsoft.Build.Construction
         public ProjectElement NextSibling
         {
             [DebuggerStepThrough]
-            get;
+            get => Link != null ? Link.NextSibling : _nextSibling;
             [DebuggerStepThrough]
-            internal set;
+            internal set => _nextSibling = value;
         }
 
         /// <summary>
@@ -253,13 +288,13 @@ namespace Microsoft.Build.Construction
         /// Location of the "Condition" attribute on this element, if any.
         /// If there is no such attribute, returns null.
         /// </summary>
-        public virtual ElementLocation ConditionLocation => XmlElement.GetAttributeLocation(XMakeAttributes.condition);
+        public virtual ElementLocation ConditionLocation => GetAttributeLocation(XMakeAttributes.condition);
 
         /// <summary>
         /// Location of the "Label" attribute on this element, if any.
         /// If there is no such attribute, returns null;
         /// </summary>
-        public ElementLocation LabelLocation => XmlElement.GetAttributeLocation(XMakeAttributes.label);
+        public ElementLocation LabelLocation => GetAttributeLocation(XMakeAttributes.label);
 
         /// <summary>
         /// Location of the corresponding Xml element.
@@ -268,10 +303,16 @@ namespace Microsoft.Build.Construction
         /// In the case of an unsaved edit, the location only
         /// contains the path to the file that the element originates from.
         /// </summary>
-        public ElementLocation Location => XmlElement.Location;
+        public ElementLocation Location =>Link != null ? Link.Location :  XmlElement.Location;
 
         /// <inheritdoc/>
-        public string ElementName => XmlElement.Name;
+        public string ElementName => Link != null? Link.ElementName : XmlElement.Name;
+
+        // Consider:  Link and XmlElement are mutually exclusive. In theory we can
+        //            save a single object reference storage by sharing the memory for these two.
+        //            One way is to use an "private object Source { get}" and to define Link => Source as PEL; XmlElement => Source as XMLEWL;
+        //            it would be a tradeoff between small memory saving and small cost in terms fro cast. Not sure what is better at this point
+        internal ProjectElementLink Link { get; }
 
         /// <summary>
         /// Gets the XmlElement associated with this project element.
@@ -321,6 +362,12 @@ namespace Microsoft.Build.Construction
 
             if (this == element)
             {
+                return;
+            }
+
+            if (Link != null)
+            {
+                Link.CopyFrom(element);
                 return;
             }
 
@@ -459,6 +506,63 @@ namespace Microsoft.Build.Construction
         /// </summary>
         /// <param name="owner">The factory to use for creating the new instance.</param>
         protected abstract ProjectElement CreateNewInstance(ProjectRootElement owner);
+
+        internal ElementLocation GetAttributeLocation(string attributeName)
+        {
+            return Link != null ? Link.GetAttributeLocation(attributeName) : XmlElement.GetAttributeLocation(attributeName);
+        }
+
+        internal string GetAttributeValue(string attributeName, bool nullIfNotExists = false)
+        {
+            return Link != null ? Link.GetAttributeValue(attributeName, nullIfNotExists) :
+                ProjectXmlUtilities.GetAttributeValue(XmlElement, attributeName, nullIfNotExists);
+        }
+
+        internal string GetAttributeValue(string attributeName, ref string cache)
+        {
+            if (cache != null) return cache;
+            var value = GetAttributeValue(attributeName, false);
+            if (Link == null)
+            {
+                cache = value;
+            }
+
+            return value;
+        }
+
+        internal void SetOrRemoveAttribute(string name, string value, string reason = null, string param = null)
+        {
+            if (Link != null)
+            {
+                Link.SetOrRemoveAttribute(name, value, false, reason, param);
+            }
+            else
+            {
+                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.include, value);
+                if (reason != null)
+                {
+                    MarkDirty(reason, param);
+                }
+            }
+        }
+
+        internal void SetOrRemoveAttribute(string name, string value, ref string cache, string reason = null, string param = null)
+        {
+            if (Link != null)
+            {
+                Link.SetOrRemoveAttribute(name, value, false, reason, param);
+            }
+            else
+            {
+                ProjectXmlUtilities.SetOrRemoveAttribute(XmlElement, XMakeAttributes.include, value);
+                cache = value;
+                if (reason != null)
+                {
+                    MarkDirty(reason, param);
+                }
+            }
+        }
+
 
         /// <summary>
         /// Special derived variation of ProjectElementContainer used to wrap a ProjectRootElement.
