@@ -161,6 +161,11 @@
     <Compile Include="BackEnd\BuildManager\CacheAggregator.cs" />
     <Compile Include="BackEnd\Components\Caching\ConfigCacheWithOverride.cs" />
     <Compile Include="BackEnd\Components\Caching\ResultsCacheWithOverride.cs" />
+    <Compile Include="ObjectModelRemoting\ExternalProjectsProvider.cs" />
+    <Compile Include="ObjectModelRemoting\LinkedObjectFactory.cs" />
+    <Compile Include="ObjectModelRemoting\ConstructionObjectLinks\ProjectItemDefinitionLink.cs" />
+    <Compile Include="ObjectModelRemoting\ConstructionObjectLinks\ProjectItemLink.cs" />
+    <Compile Include="ObjectModelRemoting\ConstructionObjectLinks\ProjectLink.cs" />
     <Compile Include="Graph\GraphBuilder.cs" />
     <Compile Include="Graph\ParallelWorkSet.cs" />
     <Compile Include="Graph\ProjectInterpretation.cs" />
@@ -606,6 +611,19 @@
     <Compile Include="Logging\SerialConsoleLogger.cs">
       <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
     </Compile>
+    <Compile Include="ObjectModelRemoting\ConstructionObjectLinks\ProjectMetadataLink.cs" />
+    <Compile Include="ObjectModelRemoting\ConstructionObjectLinks\ProjectPropertyLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectElementContainerLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectExtensionsElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectImportElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectItemElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectMetadataElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectPropertyElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectRootElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectTargetElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectTaskElementLink.cs" />
+    <Compile Include="ObjectModelRemoting\ProjectUsingTaskBodyElementLink.cs" />
     <Compile Include="Resources\AssemblyResources.cs">
       <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
     </Compile>
