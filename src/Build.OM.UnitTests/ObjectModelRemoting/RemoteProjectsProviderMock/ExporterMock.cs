@@ -54,26 +54,26 @@
         public UInt32 LocalObjectId { get; }
     }
 
-    internal class LinkRemoterMock<T, L, LMock> : ExportedLinksMap.LinkedObject<T>, IRemoteLinkId // LinkRemoterMock
+    internal abstract class LinkRemoterMock<T, L, LMock> : ExportedLinksMap.LinkedObject<T>, IRemoteLinkId // LinkRemoterMock
         where T : class
     {
-        public UInt32 HostCollectionId { get; set;  }
+        public abstract L CreateLink();
+
+        public ProjectCollectionLinker OwningCollection { get; private set; }
+
+        public override void Initialize(object key, T source, object context)
+        {
+            base.Initialize(key, source, context);
+            this.OwningCollection = (ProjectCollectionLinker)context;
+        }
+
+        public UInt32 HostCollectionId => this.OwningCollection.CollectionId;
         public UInt32 LocalObjectId => this.LocalId;
 
         public static void Export<RMock>(ProjectCollectionLinker linker, T t, out RMock remoter)
             where RMock : LinkRemoterMock<T, L, LMock>, new()
         {
             linker.Export<T, L, RMock, LMock>(t, out remoter);
-        }
-    }
-
-    internal static class Exporter
-    {
-        public static void Export<RMock, T, L, LMock>(ProjectCollectionLinker linker, T t, out RMock remoter)
-            where T : class
-            where RMock : LinkRemoterMock<T, L, LMock>, new()
-        {
-            linker.Export<T, L, RMock, LMock>(t, out remoter))
         }
     }
 
@@ -103,7 +103,30 @@
 
     internal class ProjectLinkRemoter : LinkRemoterMock<Project, ProjectLink, ProjectLinkMock>
     {
+        public override ProjectLink CreateLink()
+        {
+            throw new NotImplementedException();
+        }
     }
+
+
+    internal interface ILinkMock
+    {
+        object Remoter { get; }
+    }
+
+    internal class PrjLinkMock : ProjectLink , ILinkMock
+    {
+        public PrjLinkMock(ProjectLinkRemoter proxy)
+        {
+            this.Proxy = proxy;
+        }
+
+        public ProjectLinkRemoter Proxy { get; }
+        object ILinkMock.Remoter => this.Proxy;
+
+    }
+
 
 
     internal class ProjectLinkMock : LinkMock<Project, ProjectLink, ProjectLinkRemoter>
@@ -144,7 +167,6 @@
             }
         }
 
-
         public T Import<T, L, RMock, LMock>(RMock remoter)
             where T : class
             where RMock : LinkRemoterMock<T, L, LMock>, new()
@@ -171,7 +193,6 @@
             return proxy.Linked;
         }
 
-
         public void Export<T, L, RMock, LMock>(T obj, out RMock remoter)
             where T : class
             where RMock : LinkRemoterMock<T, L, LMock>, new()
@@ -186,35 +207,26 @@
 
             if (external != null)
             {
-                var proxy = (LinkProxy<T, L, RMock>)external;
+                var proxy = (ILinkMock)external;
 
-                remoter = proxy.Remoter;
+                remoter = (RMock) proxy.Remoter;
                 return;
             }
 
-            if (exported.GetOrCreate(obj, obj, out remoter))
-            {
-                remoter.HostCollectionId = this.CollectionId;
-            }
+            exported.GetOrCreate(obj, obj, this, out remoter);
         }
     }
 
     public static class CompileTest
     {
-        public static T()
+        public static void T()
         {
             ProjectCollectionLinker pcl = new ProjectCollectionLinker();
             Project p = null;
             // pcl.Export(p, out ProjectLinkRemoter remoter);
             ProjectLinkRemoter remoter;
             ProjectLinkRemoter.Export(pcl, p, out remoter);
-            Exporter.Export(pcl, p, out remoter);
-
-
-
-
-
-            pcl.Export<Project, ProjectLink, ProjectLinkRemoter, ProjectLinkMock>(p, out ProjectLinkRemoter remoter);
+            pcl.Export<Project, ProjectLink, ProjectLinkRemoter, ProjectLinkMock>(p, out remoter);
 
         }
     }
