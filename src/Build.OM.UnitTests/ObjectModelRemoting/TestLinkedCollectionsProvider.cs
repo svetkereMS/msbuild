@@ -3,17 +3,25 @@
 namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
     using Microsoft.Build.Evaluation;
+    using System.Text.RegularExpressions;
 
     public static class CompileTest
     {
         public static void T()
         {
-            ProjectCollectionLinker pcl = new ProjectCollectionLinker();
+            var group1 = ProjectCollectionLinker.CreateGroup();
+
+            var pcLocal = group1.AddNew();
+            var pcRemote = group1.AddNew();
+            pcLocal.Importing = true;
+
+            var local = pcLocal.Collection.LoadedProjects;
+
+
             Project p = null;
             // pcl.Export(p, out ProjectLinkRemoter remoter);
-            pcl.Export(p, out MockProjectLinkRemoter remoter);
-            pcl.Export<Project, MockProjectLinkRemoter>(p, out remoter);
-
+            pcLocal.Export(p, out MockProjectLinkRemoter remoter);
+            pcLocal.Export<Project, MockProjectLinkRemoter>(p, out remoter);
         }
     }
 

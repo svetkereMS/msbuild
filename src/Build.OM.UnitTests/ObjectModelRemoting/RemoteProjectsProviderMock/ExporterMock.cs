@@ -5,9 +5,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
     using System;
     using System.Collections.Generic;
+    using System.Net.NetworkInformation;
+    using System.Threading;
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.ObjectModelRemoting;
-
+    using Microsoft.Build.Tasks;
     using ExportedLinksMap = LinkedObjectsMap<object>;
     using ImportedLinksMap = LinkedObjectsMap<System.UInt32>;
 
@@ -87,18 +89,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     **************************************************************************************/
 
     /// <summary>
-    /// Implemented by remoters, used by ProjectCollectionLinker.Export to
-    /// avoid "double-remoting" and "self-remoting". 
-    /// </summary>
-    internal interface IRemoteLinkId
-    {
-        /// <summary>
-        /// Collection, that provides "Real" object.
-        /// </summary>
-        UInt32 HostCollectionId { get; }
-    }
-
-    /// <summary>
     /// Base remoter object implementation.
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -119,6 +109,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     }
 
+    /// <summary>
+    /// used by ProjectCollectionLinker when exporting objects
+    /// to prevent "double - remoting"
+    /// all MockFOOLink objects will implement it.
+    /// </summary>
     internal interface ILinkMock
     {
         object Remoter { get; }
@@ -127,16 +122,44 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     /// <summary>
     /// Provide ability to export and import OM objects to another collections.
     /// </summary>
-    internal class ProjectCollectionLinker
+    internal class ProjectCollectionLinker : ExternalProjectsProvider
     {
+        internal static int _collecitonId = 0;
+
+        private bool importing = false;
+        private ExportedLinksMap exported = ExportedLinksMap.Create();
+        private Dictionary<UInt32, ExternalConnection> imported = new Dictionary<UInt32, ExternalConnection>();
+
+        private ProjectCollectionLinker(ConnectedProjectCollections group)
+        {
+            this.LinkedCollections = group;
+            this.CollectionId = (UInt32) Interlocked.Increment(ref _collecitonId);
+            this.Collection = new ProjectCollection();
+            this.LinkFactory = LinkedObjectsFactory.Get(this.Collection);
+        }
+
+        public ConnectedProjectCollections LinkedCollections { get; }
+
         public UInt32 CollectionId { get; }
+
         public ProjectCollection Collection { get; }
+
         public LinkedObjectsFactory LinkFactory { get; }
 
-        private ExportedLinksMap exported = ExportedLinksMap.Create();
-        private Dictionary<UInt32, ImportedLinksMap> imported = new Dictionary<UInt32, ImportedLinksMap>();
+        public bool Importing
+        {
+            get => this.importing;
+            set
+            {
+                if (value != this.importing)
+                {
+                    ExternalProjectsProvider.SetExternalProjectsProvider(this.Collection, value ? this : null);
+                    this.importing = value;
+                }
+            }
+        }
 
-        public void ConnectTo (ProjectCollectionLinker other)
+        private void ConnectTo (ProjectCollectionLinker other)
         {
             if (other.CollectionId == this.CollectionId)
             {
@@ -150,11 +173,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                     return;
                 }
 
-                // clone for so we are atomic.
-                // we don't have to be efficient here on "Connect" there very few calls.
+                // clone to be atomic.
+                // we don't have to be efficient here on "Connect". There are very few calls.
                 // compared to potentially 1000's of accesses (so it is better to copy that to lock access)
-                Dictionary<UInt32, ImportedLinksMap> newMap = new Dictionary<uint, ImportedLinksMap>(imported);
-                newMap.Add(other.CollectionId, ImportedLinksMap.Create());
+                Dictionary<UInt32, ExternalConnection> newMap = new Dictionary<uint, ExternalConnection>(imported);
+                newMap.Add(other.CollectionId, new ExternalConnection(other));
                 imported = newMap;
             }
         }
@@ -180,12 +203,12 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
 
             ActiveImport<T, RMock> proxy;
-            perRemoteCollection.GetOrCreate(remoter.LocalId, remoter, this, out proxy, slow : true);
+            perRemoteCollection.ActiveImports.GetOrCreate(remoter.LocalId, remoter, this, out proxy, slow : true);
 
             return proxy.Linked;
         }
 
-        public RMock Export<RMock, T>(T obj)
+        public RMock Export<T, RMock>(T obj)
             where T : class
             where RMock : MockLinkRemoter<T>, new()
         {
@@ -216,6 +239,35 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             exported.GetOrCreate(obj, obj, this, out remoter);
         }
 
+        // ExternalProjectsProvider
+        public override ICollection<Project> GetLoadedProjects(string filePath)
+        {
+            List<Project> result = new List<Project>();
+
+            foreach (var external in this.imported.Values)
+            {
+                foreach (var remote in external.Linker.ExportLoadedProjects(filePath))
+                {
+                    result.Add(this.Import<Project, MockProjectLinkRemoter>(remote));
+                }
+            }
+
+            return result;
+        }
+
+        private IReadOnlyCollection<MockProjectLinkRemoter> ExportLoadedProjects(string filePath)
+        {
+            List<MockProjectLinkRemoter> remoted = new List<MockProjectLinkRemoter>();
+            var toRemote = filePath == null ? this.Collection.LoadedProjects : this.Collection.GetLoadedProjects(filePath);
+
+            foreach (var p in toRemote)
+            {
+                remoted.Add(this.Export<Project, MockProjectLinkRemoter>(p));
+            }
+
+            return remoted;
+        }
+
         private class ActiveImport<T, RMock> : ImportedLinksMap.LinkedObject<RMock>
             where T : class
             where RMock : MockLinkRemoter<T>
@@ -233,6 +285,45 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             public T Linked { get; protected set; }
             public RMock Remoter { get; protected set; }
+        }
+
+
+        public static ConnectedProjectCollections CreateGroup()
+        {
+            return new ConnectedProjectCollections();
+        }
+
+        internal class ConnectedProjectCollections
+        {
+            private List<ProjectCollectionLinker> group = new List<ProjectCollectionLinker>();
+            public ProjectCollectionLinker AddNew()
+            {
+                var linker = new ProjectCollectionLinker(this);
+                lock (group)
+                {
+                    foreach (var l in group)
+                    {
+                        linker.ConnectTo(l);
+                        l.ConnectTo(linker);
+                    }
+                    var updatedGroup = new List<ProjectCollectionLinker>(group);
+                    updatedGroup.Add(linker);
+                    group = updatedGroup;
+                }
+
+                return linker;
+            }
+        }
+
+        private class ExternalConnection
+        {
+            public ExternalConnection(ProjectCollectionLinker linker)
+            {
+                this.Linker = linker;
+                this.ActiveImports = ImportedLinksMap.Create();
+            }
+            public ProjectCollectionLinker Linker { get; }
+            public ImportedLinksMap ActiveImports { get; }
         }
     }
 }
