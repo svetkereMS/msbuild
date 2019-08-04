@@ -1,7 +1,23 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-namespace Microsoft.Build.UnitTests.ObjectModelRemoting
+namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
+    using Microsoft.Build.Evaluation;
+
+    public static class CompileTest
+    {
+        public static void T()
+        {
+            ProjectCollectionLinker pcl = new ProjectCollectionLinker();
+            Project p = null;
+            // pcl.Export(p, out ProjectLinkRemoter remoter);
+            pcl.Export(p, out MockProjectLinkRemoter remoter);
+            pcl.Export<Project, MockProjectLinkRemoter>(p, out remoter);
+
+        }
+    }
+
+
 #if false
     using System;
     using System.Collections;
@@ -90,7 +106,7 @@ namespace Microsoft.Build.UnitTests.ObjectModelRemoting
 
 
         public override ProjectRootElement Xml => Linker.
-#region NotImpl
+    #region NotImpl
         public override bool ThrowInsteadOfSplittingItemElement { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public override bool IsDirty => throw new NotImplementedException();
@@ -260,7 +276,7 @@ namespace Microsoft.Build.UnitTests.ObjectModelRemoting
         {
             throw new NotImplementedException();
         }
-#endregion
+    #endregion
     }
 
 

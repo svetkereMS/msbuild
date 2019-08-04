@@ -1,54 +1,113 @@
-﻿namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
+﻿// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Linq;
-    using System.Reflection;
-    using System.Runtime.Serialization.Formatters.Binary;
-    using System.Threading;
-    using Microsoft.Build.BackEnd;
-    using Microsoft.Build.Construction;
     using Microsoft.Build.Evaluation;
-    using Microsoft.Build.Evaluation.Context;
-    using Microsoft.Build.Execution;
-    using Microsoft.Build.Shared;
     using Microsoft.Build.ObjectModelRemoting;
-    using Shouldly;
-    using Xunit;
 
     using ExportedLinksMap = LinkedObjectsMap<object>;
     using ImportedLinksMap = LinkedObjectsMap<System.UInt32>;
-    using System.Runtime.InteropServices;
-    using System.Security.Cryptography;
-    using Microsoft.Build.Framework;
-    using Microsoft.Build.Logging;
 
-    // Typical flow for "linked object" of type "Foo"
-    // [ ---  Client Process                                    ]                           [ Server process (can be different) ] 
-    // (Foo) localView <=> (FooLink) link <=> FooLinkRemoter (Proxy) <=~connection mechanism~=> FooLinkRemoter(stub) <=> (Real object)
-    //
-    // FooLinkRemoter would be whatever ExternalProviders see useful to provide FooLink implementation, it might be completely different interface.
-    // (note some link types would be inconvenient /impossible to serialize for example and pass cross process).
-    // For the purpose of unit tests we know Client and Server are on the same process, so we can cheat and combine the proxy/connection/stub to a single object.
-    // we'll call FooRemoter. We want to make sure FooRemoter only use a simple type (generally only serializable types) to ensure the
-    // actual implementation is possible.
+    /**************************************************************************************
+    For the ExteranlProjectsProvider mock infrastructure we'll try to use very similar model as in the actual implementation in VS.
 
+    Typical flow for "linked object" of type "Foo"
+    [ ---  Client Collection                                    ]                           [ Server collection (can be different process) ] 
+    (Foo) localView <=> (FooLink) link <=> FooLinkRemoter (Proxy) <=~connection mechanism~=> FooLinkRemoter(stub) <=> (Real object)
+    
+    FooLinkRemoter would be whatever ExternalProviders see useful to provide FooLink implementation and is compatable with connection mechanism
+    it might be completely different interface since some link types would be either inefficient or impossible to serialize for example and pass cross process.
+    
+    Here we can cheat a little bit, since we run both Client and Server collection in the same process so we can ignore connection mechanism (typically some
+    form or serialization/deserialization) and just give the "client" link implementation the same Remoter object we create on the "server"
+
+    So to mock the infrastructure, we will use the pattern bellow.
+    - XX - An MSBuild OM object we need to remote
+    - YY, ZZ another MSBuild OM objects used to represent "complex" case where we have method/property on the link interface with outputs or inputs that are MSBuild object types.
+
+    so let say XX object is like this:
+        public XX
+        {
+            string Simple(sting input)
+            YY Comlex(ZZ imput)
+        }
+
+    typically we have a XXLink interface in ObjectModel remoting that is similar(usually a minimal subset) to XX
+        public abstract XXLink
+        {
+            public abstract string Simple(sting input);
+            public abstract YY Comlex(ZZ imput);
+        }
+
+    And the new LinkedObjectsFactory would allow us to create a view of a instance of XX if we have XXLink for that object.
+
+    to support that we write this classes:
+
+    ("remoter")
+        class MockXXRemoter : MockLinkRemoter<XX, XXLink>
+        {
+            ProjectCollectionLinker Server { get; }    // the Server collection linking supporting class.
+            XX RealObject { get; }                     // the XX object instance in "Server collection"
+
+            // this creates a "local view" for "RealObject" inside "local" collection.
+            public override XX CreateView(ProjectCollectionLinker local)
+            {
+                return Server.LinkFactory.Create(new MockXXLink(local, this));
+            }
+
+            // remoter implementation
+            string Simple(sting input) { return RealObject.Simple(input); }
+            public MockYYRemoter Comlex(MockZZRemoter input) { Server.Export<MockYYRemoter>(RealObject.Complex(Server.Import(input)); }
+        }
+
+     ("link")
+        class MockXXLink : XXLink, ILinkMock
+        {
+            ProjectCollectionLinker Client { get; } // the client collection linking support class.
+            MockXXRemoter Proxy { get; }            // the Remoter proxy (technically the actual remoter object in our case).
+
+            // XXLink implementation
+            public override string Simple(sting input) { return Proxy.Simple(input); }
+            public override YY Comlex(ZZ input) { return Client.Import(Proxy.Complex(Client.Export<MockZZRemoter>(input)); }
+        }
+
+    Object lifetime management:
+    We'll have
+    "View" (strong ref) -> "Link" -> (strong ref) -> "Remoter" -> (strong ref) -> "real object"
+
+    "exported" table holds "weak ref" to "remoter" (keyed on "real object")
+    "imported" table holds "weak ref" to "view"    (keyed on "real object").
+
+    the purpose of these two is to ensure there is only one "view" instance for any "real object" in client collection.
+    Functionally that is not needed, but there is some MSBuild and usage patterns that do use "ReferenceEqual" and we want to not break these.
+
+    **************************************************************************************/
+
+    /// <summary>
+    /// Implemented by remoters, used by ProjectCollectionLinker.Export to
+    /// avoid "double-remoting" and "self-remoting". 
+    /// </summary>
     internal interface IRemoteLinkId
     {
+        /// <summary>
+        /// Collection, that provides "Real" object.
+        /// </summary>
         UInt32 HostCollectionId { get; }
-        UInt32 LocalObjectId { get; }
     }
 
-    internal abstract class LinkRemoterMock<T, L> : ExportedLinksMap.LinkedObject<T>, IRemoteLinkId // LinkRemoterMock
+    /// <summary>
+    /// Base remoter object implementation.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal abstract class MockLinkRemoter<T> : ExportedLinksMap.LinkedObject<T> //, IRemoteLinkId // LinkRemoterMock
         where T : class
-        where L : class
     {
-        public abstract T CreateLinkedObject(ProjectCollectionLinker remote);
-
         public ProjectCollectionLinker OwningCollection { get; private set; }
+
+        public UInt32 HostCollectionId => this.OwningCollection.CollectionId;
 
         public override void Initialize(object key, T source, object context)
         {
@@ -56,243 +115,19 @@
             this.OwningCollection = (ProjectCollectionLinker)context;
         }
 
-        public UInt32 HostCollectionId => this.OwningCollection.CollectionId;
-        public UInt32 LocalObjectId => this.LocalId;
+        public abstract T CreateLinkedObject(ProjectCollectionLinker remote);
 
-        public static void Export<RMock>(ProjectCollectionLinker linker, T t, out RMock remoter)
-            where RMock : LinkRemoterMock<T, L>, new()
-        {
-            linker.Export<T, L, RMock>(t, out remoter);
-        }
     }
 
-    internal class LinkProxy<T, L, RMock> : ImportedLinksMap.LinkedObject<RMock>
-        where T : class
-        where L : class
-        where RMock : LinkRemoterMock<T, L>
-    {
-        public override void Initialize(uint key, RMock source, object context)
-        {
-            base.Initialize(key, source, context);
-
-            this.Remoter = source;
-            this.Linker = (ProjectCollectionLinker) context;
-            this.Linked = source.CreateLinkedObject(this.Linker);
-        }
-
-        public ProjectCollectionLinker Linker { get; private set; }
-
-        public T Linked { get; protected set; }
-        public RMock Remoter {get; protected set; }
-    }
-
-
-    internal class ProjectLinkRemoter : LinkRemoterMock<Project, ProjectLink>
-    {
-        public override Project CreateLinkedObject(ProjectCollectionLinker remote)
-        {
-            var link = new PrjLinkMock(this);
-            return remote.LinkFactory.Create(link);
-        }
-    }
-
-
-    internal interface ILinkMock<T, L>
+    internal interface ILinkMock
     {
         object Remoter { get; }
     }
 
-    internal class PrjLinkMock : ProjectLink , ILinkMock<Project, ProjectLink>
-    {
-        public PrjLinkMock(ProjectLinkRemoter proxy)
-        {
-            this.Proxy = proxy;
-        }
-
-        public ProjectLinkRemoter Proxy { get; }
-
-        #region ProjectLink
-        #region NotImpl
-        public override ProjectRootElement Xml => throw new NotImplementedException();
-
-        public override bool ThrowInsteadOfSplittingItemElement { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override bool IsDirty => throw new NotImplementedException();
-
-        public override IDictionary<string, string> GlobalProperties => throw new NotImplementedException();
-
-        public override ICollection<string> ItemTypes => throw new NotImplementedException();
-
-        public override ICollection<ProjectProperty> Properties => throw new NotImplementedException();
-
-        public override IDictionary<string, List<string>> ConditionedProperties => throw new NotImplementedException();
-
-        public override IDictionary<string, ProjectItemDefinition> ItemDefinitions => throw new NotImplementedException();
-
-        public override ICollection<ProjectItem> Items => throw new NotImplementedException();
-
-        public override ICollection<ProjectItem> ItemsIgnoringCondition => throw new NotImplementedException();
-
-        public override IList<ResolvedImport> Imports => throw new NotImplementedException();
-
-        public override IList<ResolvedImport> ImportsIncludingDuplicates => throw new NotImplementedException();
-
-        public override IDictionary<string, ProjectTargetInstance> Targets => throw new NotImplementedException();
-
-        public override ICollection<ProjectProperty> AllEvaluatedProperties => throw new NotImplementedException();
-
-        public override ICollection<ProjectMetadata> AllEvaluatedItemDefinitionMetadata => throw new NotImplementedException();
-
-        public override ICollection<ProjectItem> AllEvaluatedItems => throw new NotImplementedException();
-
-        public override string ToolsVersion => throw new NotImplementedException();
-
-        public override string SubToolsetVersion => throw new NotImplementedException();
-
-        public override bool SkipEvaluation { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override bool DisableMarkDirty { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override bool IsBuildEnabled { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override int LastEvaluationId => throw new NotImplementedException();
-
-        object ILinkMock<Project, ProjectLink>.Remoter => this.Proxy;
-
-        public override IList<ProjectItem> AddItem(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override IList<ProjectItem> AddItemFast(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool Build(string[] targets, IEnumerable<ILogger> loggers, IEnumerable<ForwardingLoggerRecord> remoteLoggers, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ProjectInstance CreateProjectInstance(ProjectInstanceSettings settings, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override string ExpandString(string unexpandedValue)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<GlobResult> GetAllGlobs(EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<GlobResult> GetAllGlobs(string itemType, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<ProvenanceResult> GetItemProvenance(string itemToMatch, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<ProvenanceResult> GetItemProvenance(string itemToMatch, string itemType, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<ProvenanceResult> GetItemProvenance(ProjectItem item, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ICollection<ProjectItem> GetItems(string itemType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ICollection<ProjectItem> GetItemsByEvaluatedInclude(string evaluatedInclude)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ICollection<ProjectItem> GetItemsIgnoringCondition(string itemType)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override IEnumerable<ProjectElement> GetLogicalProject()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ProjectProperty GetProperty(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override string GetPropertyValue(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void MarkDirty()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void ReevaluateIfNecessary(EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool RemoveGlobalProperty(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool RemoveItem(ProjectItem item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void RemoveItems(IEnumerable<ProjectItem> items)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool RemoveProperty(ProjectProperty property)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void SaveLogicalProject(TextWriter writer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool SetGlobalProperty(string name, string escapedValue)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override ProjectProperty SetProperty(string name, string unevaluatedValue)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void Unload()
-        {
-            throw new NotImplementedException();
-        }
-        #endregion
-        #endregion
-    }
-
-
-
-    class ProjectCollectionLinker
+    /// <summary>
+    /// Provide ability to export and import OM objects to another collections.
+    /// </summary>
+    internal class ProjectCollectionLinker
     {
         public UInt32 CollectionId { get; }
         public ProjectCollection Collection { get; }
@@ -324,10 +159,9 @@
             }
         }
 
-        public T Import<T, L, RMock>(RMock remoter)
+        public T Import<T, RMock>(RMock remoter)
             where T : class
-            where L : class
-            where RMock : LinkRemoterMock<T, L>, new()
+            where RMock : MockLinkRemoter<T>, new()
         {
             if (remoter == null)
             {
@@ -345,16 +179,23 @@
                 throw new Exception("Not connected!");
             }
 
-            LinkProxy<T, L, RMock> proxy;
+            ActiveImport<T, RMock> proxy;
             perRemoteCollection.GetOrCreate(remoter.LocalId, remoter, this, out proxy, slow : true);
 
             return proxy.Linked;
         }
 
-        public void Export<T, L, RMock>(T obj, out RMock remoter)
+        public RMock Export<RMock, T>(T obj)
             where T : class
-            where L : class
-            where RMock : LinkRemoterMock<T, L>, new()
+            where RMock : MockLinkRemoter<T>, new()
+        {
+            Export(obj, out RMock result);
+            return result;
+        }
+
+        public void Export<T, RMock>(T obj, out RMock remoter)
+            where T : class
+            where RMock : MockLinkRemoter<T>, new()
         {
             if (obj == null)
             {
@@ -366,7 +207,7 @@
 
             if (external != null)
             {
-                var proxy = (ILinkMock<T,L>)external;
+                var proxy = (ILinkMock)external;
 
                 remoter = (RMock) proxy.Remoter;
                 return;
@@ -374,21 +215,24 @@
 
             exported.GetOrCreate(obj, obj, this, out remoter);
         }
-    }
 
-    public static class CompileTest
-    {
-        public static void T()
+        private class ActiveImport<T, RMock> : ImportedLinksMap.LinkedObject<RMock>
+            where T : class
+            where RMock : MockLinkRemoter<T>
         {
-            ProjectCollectionLinker pcl = new ProjectCollectionLinker();
-            Project p = null;
-            // pcl.Export(p, out ProjectLinkRemoter remoter);
-            ProjectLinkRemoter remoter;
-            ProjectLinkRemoter.Export(pcl, p, out remoter);
-            pcl.Export<Project, ProjectLink, ProjectLinkRemoter>(p, out remoter);
+            public override void Initialize(uint key, RMock source, object context)
+            {
+                base.Initialize(key, source, context);
 
+                this.Remoter = source;
+                this.Linker = (ProjectCollectionLinker)context;
+                this.Linked = source.CreateLinkedObject(this.Linker);
+            }
+
+            public ProjectCollectionLinker Linker { get; private set; }
+
+            public T Linked { get; protected set; }
+            public RMock Remoter { get; protected set; }
         }
     }
-
-
 }
