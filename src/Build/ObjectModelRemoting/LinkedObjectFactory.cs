@@ -3,10 +3,20 @@
 
 namespace Microsoft.Build.ObjectModelRemoting
 {
-    using System.Collections.Generic;
     using Microsoft.Build.Construction;
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
+
+    /// <summary>
+    /// implemented by MSBuild objects that support remote linking;
+    /// </summary>
+    internal interface ILinkableObject
+    {
+        /// <summary>
+        /// Gets the current link, if any. For local objects returns null;
+        /// </summary>
+        object Link { get; }
+    }
 
     /// <summary>
     /// Provide facility to ExternalProjectsProvider implementation
@@ -15,19 +25,36 @@ namespace Microsoft.Build.ObjectModelRemoting
     /// </summary>
     public class LinkedObjectsFactory
     {
-        public static LinkedObjectsFactory Get(ProjectCollection collection)
-        {
-            return new LinkedObjectsFactory(collection);
-        }
-
         private LinkedObjectsFactory(ProjectCollection collection)
         {
             Collection = collection;
         }
 
+        /// <summary>
+        /// Acquire a <see cref="LinkedObjectsFactory"/> instance for a given ProjectCollection.
+        /// Allows creating a local MSBuild OM objects representing externally hosted Projects.
+        /// </summary>
+        public static LinkedObjectsFactory Get(ProjectCollection collection)
+        {
+            return new LinkedObjectsFactory(collection);
+        }
+
+        /// <summary>
+        /// Local collection.
+        /// </summary>
         public ProjectCollection Collection { get; }
 
-        #region Construction
+        /// <summary>
+        /// Get the underlying "link" proxy for a given MSBuild object model object (null if it is not linked).
+        /// can be used by ExternalProjectsProvider to prevent double linking when implementing remote calls.
+        /// </summary>
+        public object GetLink(object localObject)
+        {
+            var linkable = localObject as ILinkableObject;
+            return linkable?.Link;
+        }
+
+        #region Evaluation
 
         public ProjectItem Create(ProjectItemLink link, Project project = null, ProjectItemElement xml = null)
         {
@@ -46,6 +73,11 @@ namespace Microsoft.Build.ObjectModelRemoting
 
         public Project Create(ProjectLink link)
         {
+            // note we do not use wrapper LikedProjects class in this case.
+            // Project element storage is in fact increased to support linked (with few bytes)
+            // but since the Projects objects number are relatively low, this is not a big concern
+            // as with other items that can be typically  1000s of times the number of projects.
+            // That is done for simplicity, but if needed we can use the same approach here as well.
             return new Project(Collection, link);
         }
 
@@ -63,9 +95,9 @@ namespace Microsoft.Build.ObjectModelRemoting
             return new LinkedProjectProperty(project, link);
         }
 
-        public ResolvedImport Create(Project project, ProjectImportElement importingElement, ProjectRootElement importedProject, int versionEvaluated, SdkResult sdkResult)
+        public ResolvedImport Create(ProjectImportElement importingElement, ProjectRootElement importedProject, int versionEvaluated, SdkResult sdkResult, bool isImported)
         {
-            return new ResolvedImport(project, importingElement, importedProject, versionEvaluated, sdkResult);
+            return new ResolvedImport(importingElement, importedProject, versionEvaluated, sdkResult, isImported);
         }
 
         #endregion
@@ -185,7 +217,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         // memory storage of original items (with the Link field) while it is small, some of the MSbuild items can be created
         // in millions so it does adds up otherwise.
 
-        private class LinkedProjectItem : ProjectItem
+        private class LinkedProjectItem : ProjectItem, ILinkableObject
         {
             internal LinkedProjectItem(ProjectItemElement xml, Project project, ProjectItemLink link)
                 : base(xml, project)
@@ -194,9 +226,11 @@ namespace Microsoft.Build.ObjectModelRemoting
             }
 
             internal override ProjectItemLink Link { get; }
+
+            object ILinkableObject.Link => Link;
         }
 
-        private class LinkedProjectItemDefinition : ProjectItemDefinition
+        private class LinkedProjectItemDefinition : ProjectItemDefinition, ILinkableObject
         {
             internal LinkedProjectItemDefinition(ProjectItemDefinitionLink link, Project project, string itemType)
                 : base(project, itemType)
@@ -205,9 +239,10 @@ namespace Microsoft.Build.ObjectModelRemoting
             }
 
             internal override ProjectItemDefinitionLink Link { get; }
+            object ILinkableObject.Link => Link;
         }
 
-        private class LinkedProjectMetadata : ProjectMetadata
+        private class LinkedProjectMetadata : ProjectMetadata, ILinkableObject
         {
             internal LinkedProjectMetadata(object parent, ProjectMetadataLink link)
                 : base(parent, link.Xml)
@@ -216,11 +251,14 @@ namespace Microsoft.Build.ObjectModelRemoting
             }
 
             internal override ProjectMetadataLink Link { get; }
+            object ILinkableObject.Link => Link;
+
         }
 
-        private class LinkedProjectProperty : ProjectProperty
+        private class LinkedProjectProperty : ProjectProperty, ILinkableObject
         {
             internal ProjectPropertyLink Link { get; }
+            object ILinkableObject.Link => Link;
 
             /// <summary>
             /// Creates a regular evaluated property, with backing XML.

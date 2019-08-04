@@ -15,7 +15,7 @@ namespace Microsoft.Build.Construction
     /// <summary>
     /// Abstract base class for MSBuild construction object model elements. 
     /// </summary>
-    public abstract class ProjectElement : IProjectElement
+    public abstract class ProjectElement : IProjectElement, ILinkableObject
     {
         /// <summary>
         /// Parent container object.
@@ -291,6 +291,11 @@ namespace Microsoft.Build.Construction
         private ILinkedXml _xmlSource;
 
         internal ProjectElementLink Link => _xmlSource.Link;
+
+        /// <summary>
+        /// <see cref="ILinkableObject.Link"/>
+        /// </summary>
+        object ILinkableObject.Link => Link;
 
 
         /// <summary>

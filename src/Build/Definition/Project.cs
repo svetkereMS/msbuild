@@ -47,7 +47,7 @@ namespace Microsoft.Build.Evaluation
     /// UNDONE: (Multiple configurations.) Protect against problems when attempting to edit, after edits were made to the same ProjectRootElement either directly or through other projects evaluated from that ProjectRootElement.
     /// </remarks>
     [DebuggerDisplay("{FullPath} EffectiveToolsVersion={ToolsVersion} #GlobalProperties={_data.GlobalPropertiesDictionary.Count} #Properties={_data.Properties.Count} #ItemTypes={_data.ItemTypes.Count} #ItemDefinitions={_data.ItemDefinitions.Count} #Items={_data.Items.Count} #Targets={_data.Targets.Count}")]
-    public class Project
+    public class Project : ILinkableObject
     {
         /// <summary>
         /// Whether to write information about why we evaluate to debug output.
@@ -64,6 +64,7 @@ namespace Microsoft.Build.Evaluation
 
         internal bool IsLinked => implementationInternal.IsLinked;
         internal ProjectLink Link => implementation;
+        object ILinkableObject.Link => IsLinked ? Link : null;
 
         /// <summary>
         /// Default project template options (include all features).

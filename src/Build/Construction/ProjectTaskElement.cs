@@ -141,7 +141,7 @@ namespace Microsoft.Build.Construction
             {
                 if (Link != null)
                 {
-                    return TaskLink.GetParameters();
+                    return TaskLink.Parameters;
                 }
 
                 lock (_locker)
@@ -171,7 +171,7 @@ namespace Microsoft.Build.Construction
             {
                 if (Link != null)
                 {
-                    return TaskLink.GetParametersLocations();
+                    return TaskLink.ParameterLocations;
                 }
 
                 lock (_locker)

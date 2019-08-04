@@ -1638,7 +1638,7 @@ namespace Microsoft.Build.ObjectModelRemoting
     {
         internal LinkedObjectsFactory() { }
         public Microsoft.Build.Evaluation.ProjectCollection Collection { get { throw null; } }
-        public Microsoft.Build.Evaluation.ResolvedImport Create(Microsoft.Build.Evaluation.Project project, Microsoft.Build.Construction.ProjectImportElement importingElement, Microsoft.Build.Construction.ProjectRootElement importedProject, int versionEvaluated, Microsoft.Build.Framework.SdkResult sdkResult) { throw null; }
+        public Microsoft.Build.Evaluation.ResolvedImport Create(Microsoft.Build.Construction.ProjectImportElement importingElement, Microsoft.Build.Construction.ProjectRootElement importedProject, int versionEvaluated, Microsoft.Build.Framework.SdkResult sdkResult, bool isImported) { throw null; }
         public Microsoft.Build.Construction.ProjectChooseElement Create(Microsoft.Build.ObjectModelRemoting.ProjectChooseElementLink link) { throw null; }
         public Microsoft.Build.Construction.ProjectExtensionsElement Create(Microsoft.Build.ObjectModelRemoting.ProjectExtensionsElementLink link) { throw null; }
         public Microsoft.Build.Construction.ProjectImportElement Create(Microsoft.Build.ObjectModelRemoting.ProjectImportElementLink link) { throw null; }
@@ -1668,6 +1668,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public Microsoft.Build.Construction.ProjectWhenElement Create(Microsoft.Build.ObjectModelRemoting.ProjectWhenElementLink link) { throw null; }
         public Microsoft.Build.Construction.UsingTaskParameterGroupElement Create(Microsoft.Build.ObjectModelRemoting.UsingTaskParameterGroupElementLink link) { throw null; }
         public static Microsoft.Build.ObjectModelRemoting.LinkedObjectsFactory Get(Microsoft.Build.Evaluation.ProjectCollection collection) { throw null; }
+        public object GetLink(object localObject) { throw null; }
     }
     public abstract partial class ProjectChooseElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {
@@ -1768,49 +1769,48 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectMetadata> AllEvaluatedItemDefinitionMetadata { get; }
         public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> AllEvaluatedItems { get; }
         public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectProperty> AllEvaluatedProperties { get; }
-        public virtual System.Collections.Generic.IDictionary<string, System.Collections.Generic.List<string>> ConditionedProperties { get { throw null; } }
-        public virtual bool DisableMarkDirty { get { throw null; } set { } }
+        public abstract System.Collections.Generic.IDictionary<string, System.Collections.Generic.List<string>> ConditionedProperties { get; }
+        public abstract bool DisableMarkDirty { get; set; }
         public abstract System.Collections.Generic.IDictionary<string, string> GlobalProperties { get; }
         public abstract System.Collections.Generic.IList<Microsoft.Build.Evaluation.ResolvedImport> Imports { get; }
-        public virtual System.Collections.Generic.IList<Microsoft.Build.Evaluation.ResolvedImport> ImportsIncludingDuplicates { get { throw null; } }
-        public virtual bool IsBuildEnabled { get { throw null; } set { } }
+        public abstract System.Collections.Generic.IList<Microsoft.Build.Evaluation.ResolvedImport> ImportsIncludingDuplicates { get; }
+        public abstract bool IsBuildEnabled { get; set; }
         public abstract bool IsDirty { get; }
         public abstract System.Collections.Generic.IDictionary<string, Microsoft.Build.Evaluation.ProjectItemDefinition> ItemDefinitions { get; }
         public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> Items { get; }
-        public virtual System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> ItemsIgnoringCondition { get { throw null; } }
+        public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> ItemsIgnoringCondition { get; }
         public abstract System.Collections.Generic.ICollection<string> ItemTypes { get; }
         public abstract int LastEvaluationId { get; }
         public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectProperty> Properties { get; }
-        public virtual bool SkipEvaluation { get { throw null; } set { } }
+        public abstract bool SkipEvaluation { get; set; }
         public abstract string SubToolsetVersion { get; }
         public abstract System.Collections.Generic.IDictionary<string, Microsoft.Build.Execution.ProjectTargetInstance> Targets { get; }
         public virtual bool ThrowInsteadOfSplittingItemElement { get { throw null; } set { } }
         public abstract string ToolsVersion { get; }
         public abstract Microsoft.Build.Construction.ProjectRootElement Xml { get; }
-        public virtual System.Collections.Generic.IList<Microsoft.Build.Evaluation.ProjectItem> AddItem(string itemType, string unevaluatedInclude, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> metadata) { throw null; }
-        public virtual System.Collections.Generic.IList<Microsoft.Build.Evaluation.ProjectItem> AddItemFast(string itemType, string unevaluatedInclude, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> metadata) { throw null; }
+        public abstract System.Collections.Generic.IList<Microsoft.Build.Evaluation.ProjectItem> AddItem(string itemType, string unevaluatedInclude, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> metadata);
+        public abstract System.Collections.Generic.IList<Microsoft.Build.Evaluation.ProjectItem> AddItemFast(string itemType, string unevaluatedInclude, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> metadata);
         public virtual bool Build(string[] targets, System.Collections.Generic.IEnumerable<Microsoft.Build.Framework.ILogger> loggers, System.Collections.Generic.IEnumerable<Microsoft.Build.Logging.ForwardingLoggerRecord> remoteLoggers, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
-        public virtual Microsoft.Build.Execution.ProjectInstance CreateProjectInstance(Microsoft.Build.Execution.ProjectInstanceSettings settings, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
+        public abstract Microsoft.Build.Execution.ProjectInstance CreateProjectInstance(Microsoft.Build.Execution.ProjectInstanceSettings settings, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
         public abstract string ExpandString(string unexpandedValue);
-        public virtual System.Collections.Generic.List<Microsoft.Build.Evaluation.GlobResult> GetAllGlobs(Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
-        public virtual System.Collections.Generic.List<Microsoft.Build.Evaluation.GlobResult> GetAllGlobs(string itemType, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
-        public virtual System.Collections.Generic.List<Microsoft.Build.Evaluation.ProvenanceResult> GetItemProvenance(Microsoft.Build.Evaluation.ProjectItem item, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
-        public virtual System.Collections.Generic.List<Microsoft.Build.Evaluation.ProvenanceResult> GetItemProvenance(string itemToMatch, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
-        public virtual System.Collections.Generic.List<Microsoft.Build.Evaluation.ProvenanceResult> GetItemProvenance(string itemToMatch, string itemType, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
+        public abstract System.Collections.Generic.List<Microsoft.Build.Evaluation.GlobResult> GetAllGlobs(Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
+        public abstract System.Collections.Generic.List<Microsoft.Build.Evaluation.GlobResult> GetAllGlobs(string itemType, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
+        public abstract System.Collections.Generic.List<Microsoft.Build.Evaluation.ProvenanceResult> GetItemProvenance(Microsoft.Build.Evaluation.ProjectItem item, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
+        public abstract System.Collections.Generic.List<Microsoft.Build.Evaluation.ProvenanceResult> GetItemProvenance(string itemToMatch, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
+        public abstract System.Collections.Generic.List<Microsoft.Build.Evaluation.ProvenanceResult> GetItemProvenance(string itemToMatch, string itemType, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
         public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> GetItems(string itemType);
         public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> GetItemsByEvaluatedInclude(string evaluatedInclude);
-        public virtual System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> GetItemsIgnoringCondition(string itemType) { throw null; }
-        public static Microsoft.Build.ObjectModelRemoting.ProjectLink GetLink(Microsoft.Build.Evaluation.Project project) { throw null; }
-        public virtual System.Collections.Generic.IEnumerable<Microsoft.Build.Construction.ProjectElement> GetLogicalProject() { throw null; }
+        public abstract System.Collections.Generic.ICollection<Microsoft.Build.Evaluation.ProjectItem> GetItemsIgnoringCondition(string itemType);
+        public abstract System.Collections.Generic.IEnumerable<Microsoft.Build.Construction.ProjectElement> GetLogicalProject();
         public abstract Microsoft.Build.Evaluation.ProjectProperty GetProperty(string name);
         public abstract string GetPropertyValue(string name);
         public abstract void MarkDirty();
         public abstract void ReevaluateIfNecessary(Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
         public abstract bool RemoveGlobalProperty(string name);
-        public virtual bool RemoveItem(Microsoft.Build.Evaluation.ProjectItem item) { throw null; }
-        public virtual void RemoveItems(System.Collections.Generic.IEnumerable<Microsoft.Build.Evaluation.ProjectItem> items) { }
+        public abstract bool RemoveItem(Microsoft.Build.Evaluation.ProjectItem item);
+        public abstract void RemoveItems(System.Collections.Generic.IEnumerable<Microsoft.Build.Evaluation.ProjectItem> items);
         public abstract bool RemoveProperty(Microsoft.Build.Evaluation.ProjectProperty property);
-        public virtual void SaveLogicalProject(System.IO.TextWriter writer) { }
+        public abstract void SaveLogicalProject(System.IO.TextWriter writer);
         public abstract bool SetGlobalProperty(string name, string escapedValue);
         public abstract Microsoft.Build.Evaluation.ProjectProperty SetProperty(string name, string unevaluatedValue);
         public abstract void Unload();
@@ -1826,8 +1826,9 @@ namespace Microsoft.Build.ObjectModelRemoting
         protected ProjectMetadataLink() { }
         public abstract string EvaluatedValueEscaped { get; }
         public abstract object Parent { get; }
-        public abstract Microsoft.Build.Evaluation.ProjectMetadata Predecessor { get; }
+        public virtual Microsoft.Build.Evaluation.ProjectMetadata Predecessor { get { throw null; } }
         public abstract Microsoft.Build.Construction.ProjectMetadataElement Xml { get; }
+        public static object GetParent(Microsoft.Build.Evaluation.ProjectMetadata metadata) { throw null; }
     }
     public abstract partial class ProjectOnErrorElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementLink
     {
@@ -1918,9 +1919,9 @@ namespace Microsoft.Build.ObjectModelRemoting
     public abstract partial class ProjectTaskElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {
         protected ProjectTaskElementLink() { }
+        public abstract System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, Microsoft.Build.Construction.ElementLocation>> ParameterLocations { get; }
+        public abstract System.Collections.Generic.IDictionary<string, string> Parameters { get; }
         public abstract string GetParameter(string name);
-        public abstract System.Collections.Generic.IDictionary<string, string> GetParameters();
-        public abstract System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, Microsoft.Build.Construction.ElementLocation>> GetParametersLocations();
         public abstract void RemoveAllParameters();
         public abstract void RemoveParameter(string name);
         public abstract void SetParameter(string name, string unevaluatedValue);
