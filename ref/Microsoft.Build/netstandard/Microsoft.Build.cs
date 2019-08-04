@@ -1785,12 +1785,12 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract bool SkipEvaluation { get; set; }
         public abstract string SubToolsetVersion { get; }
         public abstract System.Collections.Generic.IDictionary<string, Microsoft.Build.Execution.ProjectTargetInstance> Targets { get; }
-        public virtual bool ThrowInsteadOfSplittingItemElement { get { throw null; } set { } }
+        public abstract bool ThrowInsteadOfSplittingItemElement { get; set; }
         public abstract string ToolsVersion { get; }
         public abstract Microsoft.Build.Construction.ProjectRootElement Xml { get; }
         public abstract System.Collections.Generic.IList<Microsoft.Build.Evaluation.ProjectItem> AddItem(string itemType, string unevaluatedInclude, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> metadata);
         public abstract System.Collections.Generic.IList<Microsoft.Build.Evaluation.ProjectItem> AddItemFast(string itemType, string unevaluatedInclude, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> metadata);
-        public virtual bool Build(string[] targets, System.Collections.Generic.IEnumerable<Microsoft.Build.Framework.ILogger> loggers, System.Collections.Generic.IEnumerable<Microsoft.Build.Logging.ForwardingLoggerRecord> remoteLoggers, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext) { throw null; }
+        public abstract bool Build(string[] targets, System.Collections.Generic.IEnumerable<Microsoft.Build.Framework.ILogger> loggers, System.Collections.Generic.IEnumerable<Microsoft.Build.Logging.ForwardingLoggerRecord> remoteLoggers, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
         public abstract Microsoft.Build.Execution.ProjectInstance CreateProjectInstance(Microsoft.Build.Execution.ProjectInstanceSettings settings, Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
         public abstract string ExpandString(string unexpandedValue);
         public abstract System.Collections.Generic.List<Microsoft.Build.Evaluation.GlobResult> GetAllGlobs(Microsoft.Build.Evaluation.Context.EvaluationContext evaluationContext);
@@ -1826,7 +1826,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         protected ProjectMetadataLink() { }
         public abstract string EvaluatedValueEscaped { get; }
         public abstract object Parent { get; }
-        public virtual Microsoft.Build.Evaluation.ProjectMetadata Predecessor { get { throw null; } }
+        public abstract Microsoft.Build.Evaluation.ProjectMetadata Predecessor { get; }
         public abstract Microsoft.Build.Construction.ProjectMetadataElement Xml { get; }
         public static object GetParent(Microsoft.Build.Evaluation.ProjectMetadata metadata) { throw null; }
     }

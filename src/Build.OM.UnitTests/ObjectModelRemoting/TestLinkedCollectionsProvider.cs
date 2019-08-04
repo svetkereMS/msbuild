@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 namespace Microsoft.Build.UnitTests.ObjectModelRemoting
 {
-#if 0
+#if false
     using System;
     using System.Collections;
     using System.Collections.Generic;
