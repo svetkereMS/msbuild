@@ -27,7 +27,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         /// <summary>
         /// Access to remote <see cref="Project.ThrowInsteadOfSplittingItemElement"/>.
         /// </summary>
-        public virtual bool ThrowInsteadOfSplittingItemElement { get; set; }
+        public abstract bool ThrowInsteadOfSplittingItemElement { get; set; }
 
         /// <summary>
         /// Access to remote <see cref="Project.IsDirty"/>.
@@ -252,7 +252,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         /// <summary>
         /// Facilitate support for remote build.
         /// </summary>
-        public virtual bool Build(string[] targets, IEnumerable<ILogger> loggers, IEnumerable<ForwardingLoggerRecord> remoteLoggers, EvaluationContext evaluationContext) { throw new NotImplementedException(); }
+        public abstract bool Build(string[] targets, IEnumerable<ILogger> loggers, IEnumerable<ForwardingLoggerRecord> remoteLoggers, EvaluationContext evaluationContext);
 
         /// <summary>
         /// Called by the local project collection to indicate to this project that it is no longer loaded.

@@ -31,9 +31,8 @@ namespace Microsoft.Build.ObjectModelRemoting
 
         /// <summary>
         /// Access to remote <see cref="ProjectMetadata.Predecessor"/>.
-        /// Virtual, since it is rarely used and not essential.
         /// </summary>
-        public virtual ProjectMetadata Predecessor { get; }
+        public abstract ProjectMetadata Predecessor { get; }
 
         /// <summary>
         /// Helper utility for External projects provider implementation to get access of the parent object.
