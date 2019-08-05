@@ -9,42 +9,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal abstract class MockProjectElementLinkRemoter : MockLinkRemoter<ProjectElement>
     {
-
-        public static MockProjectElementLinkRemoter Export(ProjectCollectionLinker owner, ProjectElement xml )
-        {
-            if (xml == null) return null;
-            // unless we add some GetElementType(xml)  API there is no better way to create correct wrapper.
-            if (xml is ProjectElementContainer)
-            {
-                if (xml is ProjectRootElement)
-                {
-                    return owner.Export<ProjectElement, MockProjectRootElementLinkRemoter>(xml);
-                }
-            }
-            else
-            {
-                if (xml is ProjectPropertyElement)
-                {
-                    return owner.Export<ProjectElement, MockProjectPropertyElementLinkRemoter>(xml);
-                }
-
-                if (xml is ProjectOnErrorElement)
-                {
-                    return owner.Export<ProjectElement, MockProjectOnErrorElementLinkRemoter>(xml);
-                }
-
-                if (xml is ProjectOutputElement)
-                {
-                    return owner.Export<ProjectElement, MockProjectOutputElementLinkRemoter>(xml);
-                }
-            }
-
-            throw new NotImplementedException();
-        }
-
         public MockProjectElementLinkRemoter Export(ProjectElement xml)
         {
-            return Export(this.OwningCollection, xml);
+            return this.OwningCollection.ExportElement(xml);
         }
 
         public abstract ProjectElement ImportImpl(ProjectCollectionLinker remote);

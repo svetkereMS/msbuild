@@ -17,7 +17,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     ///
     /// Most of the types has a single implementation, but few has a wrapper classes. They are also internal for MSbuild.
     /// </summary>
-    static class ProjectElemetExportHelper
+    internal static class ProjectElemetExportHelper
     {
         delegate MockProjectElementLinkRemoter ExporterFactory(ProjectCollectionLinker exporter, ProjectElement xml);
         private class ElementInfo
@@ -49,58 +49,28 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         private static List<ElementInfo> canonicalTypes = new List<ElementInfo>()
         {
-            ElementInfo.New<ProjectRootElement, MockProjectRootElementLinkRemoter>(),
-            ElementInfo.New<ProjectChooseElement, MockProjectChooseElementLinkRemoter>(),
-            ElementInfo.New<ProjectExtensionsElement, MockProjectExtensionsElementLinkRemoter>(),
-
-            ElementInfo.New<ProjectImportElement, MockProjectImportElementLinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-            ElementInfo.New<., Mock.LinkRemoter>(),
-        };
-
-
-        private static Dictionary<Type, ElementInfo> canonicalTypeMap = new Dictionary<Type, ElementInfo>()
-        {
-            { typeof(ProjectImportElement),  new ElementInfo(IsOfType<ProjectImportElement>, ExportProjectImportElement) },
-            { typeof(ProjectImportGroupElement),  new ElementInfo(IsOfType<ProjectImportGroupElement>, ExportProjectImportGroupElement) },
-            { typeof(ProjectItemDefinitionElement),  new ElementInfo(IsOfType<ProjectItemDefinitionElement>, ExportProjectItemDefinitionElement) },
-            { typeof(ProjectItemDefinitionGroupElement),  new ElementInfo(IsOfType<ProjectItemDefinitionGroupElement>, ExportProjectItemDefinitionGroupElement) },
-            { typeof(ProjectItemElement),  new ElementInfo(IsOfType<ProjectItemElement>, ExportProjectItemElement) },
-            { typeof(ProjectItemGroupElement),  new ElementInfo(IsOfType<ProjectItemGroupElement>, ExportProjectItemGroupElement) },
-            { typeof(ProjectMetadataElement),  new ElementInfo(IsOfType<ProjectMetadataElement>, ExportProjectMetadataElement) },
-            { typeof(ProjectOnErrorElement),  new ElementInfo(IsOfType<ProjectOnErrorElement>, ExportProjectOnErrorElement) },
-            { typeof(ProjectOtherwiseElement),  new ElementInfo(IsOfType<ProjectOtherwiseElement>, ExportProjectOtherwiseElement) },
-            { typeof(ProjectOtherwiseElement),  new ElementInfo(IsOfType<ProjectOtherwiseElement>, Export<MockProjectOtherwiseElementLinkRemoter>) },
-
-
-            MockProjectOtherwiseElementLinkRemoter
-
-            MockProjectOutputElementLinkRemoter
-            MockProjectPropertyElementLinkRemoter
-            MockProjectPropertyGroupElementLinkRemoter
-            MockProjectSdkElementLinkRemoter
-            MockProjectTargetElementLinkRemoter
-            MockProjectTaskElementLinkRemoter
-            MockProjectUsingTaskBodyElementLinkRemoter
-            MockProjectUsingTaskElementLinkRemoter
-            MockProjectUsingTaskParameterElementLinkRemoter
-            MockProjectWhenElementLinkRemoter
-            MockUsingTaskParameterGroupElementLinkRemoter
+            ElementInfo.New<ProjectRootElement               , MockProjectRootElementLinkRemoter>(),
+            ElementInfo.New<ProjectChooseElement             , MockProjectChooseElementLinkRemoter>(),
+            ElementInfo.New<ProjectExtensionsElement         , MockProjectExtensionsElementLinkRemoter>(),
+            ElementInfo.New<ProjectImportElement             , MockProjectImportElementLinkRemoter>(),
+            ElementInfo.New<ProjectItemDefinitionGroupElement, MockProjectItemDefinitionGroupElementLinkRemoter>(),
+            ElementInfo.New<ProjectItemElement               , MockProjectItemElementLinkRemoter>(),
+            ElementInfo.New<ProjectItemGroupElement          , MockProjectItemGroupElementLinkRemoter>(),
+            ElementInfo.New<ProjectMetadataElement           , MockProjectMetadataElementLinkRemoter>(),
+            ElementInfo.New<ProjectOnErrorElement            , MockProjectOnErrorElementLinkRemoter>(),
+            ElementInfo.New<ProjectOtherwiseElement          , MockProjectOtherwiseElementLinkRemoter>(),
+            ElementInfo.New<ProjectOutputElement             , MockProjectOutputElementLinkRemoter>(),
+            ElementInfo.New<ProjectPropertyElement           , MockProjectPropertyElementLinkRemoter>(),
+            ElementInfo.New<ProjectPropertyGroupElement      , MockProjectPropertyGroupElementLinkRemoter>(),
+            ElementInfo.New<ProjectSdkElement                , MockProjectSdkElementLinkRemoter>(),
+            ElementInfo.New<ProjectTargetElement             , MockProjectTargetElementLinkRemoter>(),
+            ElementInfo.New<ProjectTaskElement               , MockProjectTaskElementLinkRemoter>(),
+            ElementInfo.New<ProjectUsingTaskBodyElement      , MockProjectUsingTaskBodyElementLinkRemoter>(),
+            ElementInfo.New<ProjectItemDefinitionElement     , MockProjectItemDefinitionElementLinkRemoter>(),
+            ElementInfo.New<ProjectUsingTaskElement          , MockProjectUsingTaskElementLinkRemoter>(),
+            ElementInfo.New<ProjectUsingTaskParameterElement , MockProjectUsingTaskParameterElementLinkRemoter>(),
+            ElementInfo.New<ProjectWhenElement               , MockProjectWhenElementLinkRemoter>(),
+            ElementInfo.New<UsingTaskParameterGroupElement   , MockUsingTaskParameterGroupElementLinkRemoter>(),
         };
 
         private static MockProjectElementLinkRemoter Export<RMock>(ProjectCollectionLinker exporter, ProjectElement xml)
@@ -109,75 +79,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             return exporter.Export<ProjectElement, RMock>(xml);
         }
 
-        private static MockProjectElementLinkRemoter ExportProjectOtherwiseElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectOnErrorElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectOnErrorElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectMetadataElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectMetadataElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectItemGroupElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectItemGroupElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectItemElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectItemElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectItemDefinitionGroupElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectItemDefinitionGroupElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectItemDefinitionElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectItemDefinitionElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectImportGroupElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectImportGroupElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectImportElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectImportElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectRootElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectRootElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectChooseElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectChooseElementLinkRemoter>(xml);
-        }
-
-        private static MockProjectElementLinkRemoter ExportProjectExtensionsElement(ProjectCollectionLinker exporter, ProjectElement xml)
-        {
-            return exporter.Export<ProjectElement, MockProjectExtensionsElementLinkRemoter>(xml);
-        }
-
         private static bool IsOfType<T> (ProjectElement xml) { return xml is T; }
 
         private static Dictionary<Type, ExporterFactory> knownTypes = new Dictionary<Type, ExporterFactory>();
 
         static ProjectElemetExportHelper()
         {
-            foreach (var v in canonicalTypeMap)
+            foreach (var v in canonicalTypes)
             {
-                knownTypes.Add(v.Key, v.Value.ExportFactory);
+                knownTypes.Add(v.CanonicalType, v.ExportFactory);
             }
         }
 
@@ -187,7 +97,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             throw new NotImplementedException();
         }
 
-        public static MockProjectElementLinkRemoter Export(ProjectCollectionLinker exporter, ProjectElement xml)
+        public static MockProjectElementLinkRemoter ExportElement(this ProjectCollectionLinker exporter, ProjectElement xml)
         {
             var implType = xml.GetType();
             if (knownTypes.TryGetValue(implType, out var factory))
@@ -195,28 +105,25 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 return factory(exporter, xml);
             }
 
-            foreach (var t in canonicalTypeMap)
+            factory = NotImplemented;
+
+            foreach (var t in canonicalTypes)
             {
-                if (t.Value.Checker(xml))
+                if (t.Checker(xml))
                 {
-                    lock (knownTypes)
-                    {
-                        var newKnown = new Dictionary<Type, ExporterFactory>(knownTypes);
-                        newKnown[implType] = t.Value.ExportFactory;
-                        knownTypes = newKnown;
-                    }
-                    return t.Value.ExportFactory(exporter, xml);
+                    factory = t.ExportFactory;
+                    break;
                 }
             }
 
             lock (knownTypes)
             {
                 var newKnown = new Dictionary<Type, ExporterFactory>(knownTypes);
-                newKnown[implType] = NotImplemented;
+                newKnown[implType] = factory;
                 knownTypes = newKnown;
             }
 
-            return NotImplemented(exporter, xml);
+            return factory(exporter, xml);
         }
 
     }

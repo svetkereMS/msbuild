@@ -92,7 +92,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public static void CopyFrom(this IProjectElementLinkHelper xml, ProjectElement element)
         {
-            xml.ElementProxy.CopyFrom(MockProjectElementLinkRemoter.Export(xml.Linker, element));
+            xml.ElementProxy.CopyFrom(xml.Linker.ExportElement(element));
         }
 
         public static ProjectElement CreateNewInstance(this IProjectElementLinkHelper xml, ProjectRootElement owner)
@@ -134,25 +134,25 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public static void InsertAfterChild(this IProjectElementContainerLinkHelper xml, ProjectElement child, ProjectElement reference)
         {
-            var childRemote = MockProjectElementLinkRemoter.Export(xml.Linker, child);
-            var referenceRemote = MockProjectElementLinkRemoter.Export(xml.Linker, reference);
+            var childRemote = xml.Linker.ExportElement(child);
+            var referenceRemote = xml.Linker.ExportElement(reference);
             xml.ContainerProxy.InsertAfterChild(childRemote, referenceRemote);
         }
         public static void InsertBeforeChild(this IProjectElementContainerLinkHelper xml, ProjectElement child, ProjectElement reference)
         {
-            var childRemote = MockProjectElementLinkRemoter.Export(xml.Linker, child);
-            var referenceRemote = MockProjectElementLinkRemoter.Export(xml.Linker, reference);
+            var childRemote = xml.Linker.ExportElement(child);
+            var referenceRemote = xml.Linker.ExportElement(reference);
             xml.ContainerProxy.InsertBeforeChild(childRemote, referenceRemote);
         }
         public static void AddInitialChild(this IProjectElementContainerLinkHelper xml, ProjectElement child)
         {
-            var childRemote = MockProjectElementLinkRemoter.Export(xml.Linker, child);
+            var childRemote = xml.Linker.ExportElement(child);
             xml.ContainerProxy.AddInitialChild(childRemote);
         }
         public static ProjectElementContainer DeepClone(this IProjectElementContainerLinkHelper xml, ProjectRootElement factory, ProjectElementContainer parent)
         {
             var factoryRemote = xml.Linker.Export<ProjectElement, MockProjectRootElementLinkRemoter>(factory);
-            var parentRemote = (MockProjectElementContainerLinkRemoter) MockProjectElementLinkRemoter.Export(xml.Linker, parent);
+            var parentRemote = (MockProjectElementContainerLinkRemoter)xml.Linker.ExportElement(parent);
             var result  = xml.ContainerProxy.DeepClone(factoryRemote, parentRemote);
 
             return (ProjectElementContainer)result.Import(xml.Linker);
@@ -160,7 +160,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public static void RemoveChild(this IProjectElementContainerLinkHelper xml, ProjectElement child)
         {
-            xml.ContainerProxy.RemoveChild(MockProjectElementLinkRemoter.Export(xml.Linker, child));
+            xml.ContainerProxy.RemoveChild(xml.Linker.ExportElement(child));
         }
 
         #endregion
