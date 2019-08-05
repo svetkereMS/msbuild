@@ -3,19 +3,7 @@
 
 namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
     using Microsoft.Build.Construction;
-    using Microsoft.Build.Evaluation;
-    using Microsoft.Build.Evaluation.Context;
-    using Microsoft.Build.Execution;
-    using Microsoft.Build.ObjectModelRemoting;
-    using Microsoft.Build.Framework;
-    using Microsoft.Build.Logging;
-    using System.Diagnostics;
-    using System.Runtime.CompilerServices;
-
     /// <summary>
     /// The C# does not really provide a easy way to efficiently implement inheritance in cases like this
     /// for abstract classes or interface, when there is a hierarchy, it is not way to share the implementation.
@@ -31,6 +19,19 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     ///
     /// This approach with extension methods helps us put all implementation in one place, and only standard copy and pace "hookup" is needed for each classes.
     /// </summary>
+
+    internal interface IProjectElementContainerLinkHelper
+    {
+        ProjectCollectionLinker Linker { get; }
+        MockProjectElementContainerLinkRemoter ContainerProxy { get; }
+    }
+
+    internal interface IProjectElementLinkHelper
+    {
+        ProjectCollectionLinker Linker { get; }
+        MockProjectElementLinkRemoter ElementProxy { get; }
+    }
+
     internal static class InheritanceImplementationHelpers
     {
         // this is so we dont use ?. everywhere.
@@ -165,18 +166,4 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         #endregion
     }
-
-
-    internal interface IProjectElementContainerLinkHelper
-    {
-        ProjectCollectionLinker Linker { get; }
-        MockProjectElementContainerLinkRemoter ContainerProxy { get; }
-    }
-
-    internal interface IProjectElementLinkHelper
-    {
-        ProjectCollectionLinker Linker { get; }
-        MockProjectElementLinkRemoter ElementProxy { get; }
-    }
-
 }

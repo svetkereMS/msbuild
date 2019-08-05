@@ -30,7 +30,4 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public override int Column { get; }
     }
-    class OverloadClases
-    {
-    }
 }

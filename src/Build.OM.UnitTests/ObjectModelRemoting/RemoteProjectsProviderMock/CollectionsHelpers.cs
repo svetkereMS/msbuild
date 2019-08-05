@@ -9,143 +9,69 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Linq;
 
 
-    internal class ReadOnlyDictionary<key, value> : IDictionary<key, value>
-      where value : class
+    static class CollectionHelpers
     {
-        Dictionary<key, value> inner;
-
-        public value this[key key] { get => inner[key]; set => throw new NotImplementedException(); }
-
-        public ICollection<key> Keys => throw new NotImplementedException();
-
-        public ICollection<value> Values => throw new NotImplementedException();
-
-        public int Count => inner.Count;
-
-        public bool IsReadOnly => true;
-
-        public void Add(key key, value value)
+        public static ICollection<T> ImportCollection<T, RMock>(this ProjectCollectionLinker importer, IEnumerable<RMock> source)
+            where T : class
+            where RMock : MockLinkRemoter<T>, new()
         {
-            throw new NotImplementedException();
-        }
-
-        public void Add(KeyValuePair<key, value> item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Clear()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Contains(KeyValuePair<key, value> item)
-        {
-            return inner.Contains(item);
-        }
-
-        public bool ContainsKey(key key)
-        {
-            return inner.ContainsKey(key);
-        }
-
-        public void CopyTo(KeyValuePair<key, value>[] array, int arrayIndex)
-        {
-            if (array != null)
+            if (source == null) return null;
+            // Just copy ...
+            List<T> result = new List<T>();
+            foreach (var sRemoter in source)
             {
-                foreach (var e in inner)
-                {
-                    if (arrayIndex >= array.Length)
-                    {
-                        return;
-                    }
-
-                    array[arrayIndex] = e;
-                    arrayIndex++;
-                }
+                var s = importer.Import<T, RMock>(s);
+                result.Add(s);
             }
+
+            return result;
         }
 
-        public IEnumerator<KeyValuePair<key, value>> GetEnumerator()
+        public static ICollection<RMock> ExportCollection<T, RMock>(this ProjectCollectionLinker exporter, IEnumerable<T> source)
+            where T : class
+            where RMock : MockLinkRemoter<T>, new()
         {
-            return inner.GetEnumerator();
-        }
-
-        public bool Remove(key key)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Remove(KeyValuePair<key, value> item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool TryGetValue(key key, out value value)
-        {
-            return inner.TryGetValue(key, out value);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable)inner).GetEnumerator();
-        }
-    }
-
-
-    internal class ReadOnlyLazyRemoteCollection<T> : ICollection<T>
-    {
-        IReadOnlyCollection<T> roCollection;
-
-        int ICollection<T>.Count => roCollection.Count;
-
-        bool ICollection<T>.IsReadOnly => true;
-
-        void ICollection<T>.Add(T item)
-        {
-            throw new NotImplementedException();
-        }
-
-        void ICollection<T>.Clear()
-        {
-            throw new NotImplementedException();
-        }
-
-        bool ICollection<T>.Contains(T item)
-        {
-            return roCollection.Contains(item);
-        }
-
-        void ICollection<T>.CopyTo(T[] array, int arrayIndex)
-        {
-            if (array != null)
+            if (source == null) return null;
+            // Just copy ...
+            List<RMock> result = new List<RMock>();
+            foreach (var s in source)
             {
-                foreach (var e in this.roCollection)
-                {
-                    if (arrayIndex >= array.Length)
-                    {
-                        return;
-                    }
-
-                    array[arrayIndex] = e;
-                    arrayIndex++;
-                }
+                var sRemoter = exporter.Export<T, RMock>(s);
+                result.Add(sRemoter);
             }
+            return result;
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        public static IDictionary<key, T> ImportDictionary<key, T, RMock>(this ProjectCollectionLinker importer, IDictionary<key, RMock> source)
+            where T : class
+            where RMock : MockLinkRemoter<T>, new()
         {
-            return this.roCollection.GetEnumerator();
+            if (source == null) return null;
+            // Just copy ...
+            Dictionary<key, T> result = new Dictionary<key, T>();
+            foreach (var sRemoter in source)
+            {
+                var value = importer.Import<T, RMock>(sRemoter.Value);
+                result.Add(sRemoter.Key, value);
+            }
+
+            return result;
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        public static IDictionary<key, RMock> ExportDictionary<key, T, RMock>(this ProjectCollectionLinker exporter, IDictionary<key, T> source)
+            where T : class
+            where RMock : MockLinkRemoter<T>, new()
         {
-            return ((IEnumerable)this.roCollection).GetEnumerator();
-        }
+            if (source == null) return null;
+            // Just copy ...
+            Dictionary<key, RMock> result = new Dictionary<key, RMock>();
+            foreach (var s in source)
+            {
+                var valueRemoter = exporter.Export<T, RMock>(s.Value);
+                result.Add(s.Key, valueRemoter);
+            }
 
-        bool ICollection<T>.Remove(T item)
-        {
-            throw new NotImplementedException();
+            return result;
         }
     }
 }

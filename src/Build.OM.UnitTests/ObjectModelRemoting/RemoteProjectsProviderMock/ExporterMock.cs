@@ -7,6 +7,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Collections.Generic;
     using System.Net.NetworkInformation;
     using System.Threading;
+    using Microsoft.Build.Construction;
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.ObjectModelRemoting;
     using Microsoft.Build.Tasks;
@@ -97,6 +98,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     {
         public ProjectCollectionLinker OwningCollection { get; private set; }
 
+        public RMock Export<PT, RMock>(PT obj)
+            where PT : class
+            where RMock : MockLinkRemoter<PT>, new()
+            => this.OwningCollection.Export<PT, RMock>(obj);
+
+        public MockProjectElementLinkRemoter ExportElement(ProjectElement obj)
+            => this.OwningCollection.ExportElement(obj);
+
         public UInt32 HostCollectionId => this.OwningCollection.CollectionId;
 
         public override void Initialize(object key, T source, object context)
@@ -106,7 +115,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
 
         public abstract T CreateLinkedObject(ProjectCollectionLinker remote);
-
     }
 
     /// <summary>

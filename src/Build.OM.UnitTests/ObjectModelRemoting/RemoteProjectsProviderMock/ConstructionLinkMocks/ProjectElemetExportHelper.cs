@@ -99,6 +99,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public static MockProjectElementLinkRemoter ExportElement(this ProjectCollectionLinker exporter, ProjectElement xml)
         {
+            if (xml == null)
+            {
+                return null;
+            }
+
             var implType = xml.GetType();
             if (knownTypes.TryGetValue(implType, out var factory))
             {
