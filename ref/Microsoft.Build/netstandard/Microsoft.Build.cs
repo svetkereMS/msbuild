@@ -1639,6 +1639,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         internal LinkedObjectsFactory() { }
         public Microsoft.Build.Evaluation.ProjectCollection Collection { get { throw null; } }
         public void AddInitialChild(Microsoft.Build.Construction.ProjectElementContainer xml, Microsoft.Build.Construction.ProjectElement child) { }
+        public void ChangeItemType(Microsoft.Build.Construction.ProjectItemElement xml, string newType) { }
         public Microsoft.Build.Evaluation.ResolvedImport Create(Microsoft.Build.Construction.ProjectImportElement importingElement, Microsoft.Build.Construction.ProjectRootElement importedProject, int versionEvaluated, Microsoft.Build.Framework.SdkResult sdkResult, bool isImported) { throw null; }
         public Microsoft.Build.Construction.ProjectChooseElement Create(Microsoft.Build.ObjectModelRemoting.ProjectChooseElementLink link) { throw null; }
         public Microsoft.Build.Construction.ProjectExtensionsElement Create(Microsoft.Build.ObjectModelRemoting.ProjectExtensionsElementLink link) { throw null; }

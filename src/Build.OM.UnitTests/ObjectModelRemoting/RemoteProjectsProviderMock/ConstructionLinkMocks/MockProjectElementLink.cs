@@ -9,27 +9,45 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal abstract class MockProjectElementLinkRemoter : MockLinkRemoter<ProjectElement>
     {
-        public MockProjectElementLinkRemoter Export(ProjectElement xml)
+
+        public static MockProjectElementLinkRemoter Export(ProjectCollectionLinker owner, ProjectElement xml )
         {
             if (xml == null) return null;
-
+            // unless we add some GetElementType(xml)  API there is no better way to create correct wrapper.
             if (xml is ProjectElementContainer)
             {
-
+                if (xml is ProjectRootElement)
+                {
+                    return owner.Export<ProjectElement, MockProjectRootElementLinkRemoter>(xml);
+                }
             }
             else
             {
-                var projectPropertyXml = xml as ProjectPropertyElement;
-                if (xml != null)
+                if (xml is ProjectPropertyElement)
                 {
-                    return OwningCollection.Export<ProjectElement, MockProjectPropertyElementLinkRemoter>(xml);
+                    return owner.Export<ProjectElement, MockProjectPropertyElementLinkRemoter>(xml);
+                }
+
+                if (xml is ProjectOnErrorElement)
+                {
+                    return owner.Export<ProjectElement, MockProjectOnErrorElementLinkRemoter>(xml);
+                }
+
+                if (xml is ProjectOutputElement)
+                {
+                    return owner.Export<ProjectElement, MockProjectOutputElementLinkRemoter>(xml);
                 }
             }
 
             throw new NotImplementedException();
         }
 
-        public abstract ProjectElement Import(ProjectCollectionLinker remote);
+        public MockProjectElementLinkRemoter Export(ProjectElement xml)
+        {
+            return Export(this.OwningCollection, xml);
+        }
+
+        public abstract ProjectElement ImportImpl(ProjectCollectionLinker remote);
 
 
         // ProjectElementLink remoting
@@ -81,15 +99,19 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
     }
 
-    internal class MockProjectElementLink : ProjectElementLink, ILinkMock, IProjectElementLinkHelper
+    // not used - just a copy/paste template for remoting support objects of Construction model hierarchical elements.
+    internal class TemplateProjectElementLink : ProjectElementLink, ILinkMock, IProjectElementLinkHelper
     {
-        object ILinkMock.Remoter => this.Proxy;
-        public MockProjectElementLinkRemoter Proxy { get; }
-
-        public MockProjectElementLink(MockProjectRootElementLinkRemoter proxy)
+        public TemplateProjectElementLink(MockProjectElementLinkRemoter proxy, ProjectCollectionLinker linker)
         {
+            this.Linker = linker;
             this.Proxy = proxy;
         }
+
+        public MockProjectElementLinkRemoter Proxy { get; }
+        public ProjectCollectionLinker Linker { get; }
+        object ILinkMock.Remoter => this.Proxy;
+        MockProjectElementLinkRemoter IProjectElementLinkHelper.ElementProxy => this.Proxy;
 
 
         #region standard ProjectElementLink implementation
@@ -112,48 +134,5 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
         #endregion
 
-    }
-
-    internal class MockProjectElementContainerLink : ProjectElementContainerLink, ILinkMock, IProjectElementLinkHelper, IProjectElementContainerLinkHelper
-    {
-        object ILinkMock.Remoter => this.Proxy;
-        public MockProjectElementLinkRemoter Proxy { get; }
-
-        public MockProjectElementContainerLink(MockProjectRootElementLinkRemoter proxy)
-        {
-            this.Proxy = proxy;
-        }
-
-        #region ProjectElementLink redirectors
-        private IProjectElementLinkHelper EImpl => (IProjectElementLinkHelper)this;
-        public override ProjectElementContainer Parent => EImpl.GetParent();
-        public override ProjectRootElement ContainingProject => EImpl.GetContainingProject();
-        public override string ElementName => EImpl.GetElementName();
-        public override string OuterElement => EImpl.GetOuterElement();
-        public override bool ExpressedAsAttribute { get => EImpl.GetExpressedAsAttribute(); set => EImpl.SetExpressedAsAttribute(value); }
-        public override ProjectElement PreviousSibling => EImpl.GetPreviousSibling();
-        public override ProjectElement NextSibling => EImpl.GetNextSibling();
-        public override ElementLocation Location => EImpl.GetLocation();
-        public override void CopyFrom(ProjectElement element) { EImpl.CopyFrom(element); }
-        public override ProjectElement CreateNewInstance(ProjectRootElement owner) { return EImpl.CreateNewInstance(owner); }
-        public override ElementLocation GetAttributeLocation(string attributeName) { return EImpl.GetAttributeLocation(attributeName); }
-        public override string GetAttributeValue(string attributeName, bool nullIfNotExists) { return EImpl.GetAttributeValue(attributeName, nullIfNotExists); }
-        public override void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param)
-        {
-            EImpl.SetOrRemoveAttribute(name, value, allowSettingEmptyAttributes, reason, param);
-        }
-        #endregion
-
-        #region ProjectElementContainer link redirectors
-        private IProjectElementContainerLinkHelper CImpl => (IProjectElementContainerLinkHelper)this;
-        public override int Count => CImpl.GetCount();
-        public override ProjectElement FirstChild => CImpl.GetFirstChild();
-        public override ProjectElement LastChild => CImpl.GetLastChild();
-        public override void InsertAfterChild(ProjectElement child, ProjectElement reference) { CImpl.InsertAfterChild(child, reference); }
-        public override void InsertBeforeChild(ProjectElement child, ProjectElement reference) { CImpl.InsertBeforeChild(child, reference); }
-        public override void AddInitialChild(ProjectElement child) { CImpl.AddInitialChild(child); }
-        public override ProjectElementContainer DeepClone(ProjectRootElement factory, ProjectElementContainer parent) { return CImpl.DeepClone(factory, parent); }
-        public override void RemoveChild(ProjectElement child) { CImpl.RemoveChild(child); }
-        #endregion
     }
 }

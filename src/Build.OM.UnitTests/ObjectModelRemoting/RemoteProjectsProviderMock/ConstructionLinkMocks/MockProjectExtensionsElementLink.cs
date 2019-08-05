@@ -6,45 +6,45 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using Microsoft.Build.Construction;
     using Microsoft.Build.ObjectModelRemoting;
 
-    internal class MockProjectPropertyElementLinkRemoter : MockProjectElementLinkRemoter
+    internal class MockProjectExtensionsElementLinkRemoter : MockProjectElementLinkRemoter
     {
-        public ProjectPropertyElement PropertyXml => (ProjectPropertyElement)Source;
+        public ProjectExtensionsElement ExtensionXml => (ProjectExtensionsElement)Source;
 
         public override ProjectElement ImportImpl(ProjectCollectionLinker remote)
         {
-            return remote.Import<ProjectElement, MockProjectPropertyElementLinkRemoter>(this);
+            return remote.Import<ProjectElement, MockProjectExtensionsElementLinkRemoter>(this);
         }
 
         public override ProjectElement CreateLinkedObject(ProjectCollectionLinker remote)
         {
-            var link = new MockProjectPropertyElementLink(this, remote);
+            var link = new MockProjectExtensionsElementLink(this, remote);
             return remote.LinkFactory.Create(link);
         }
 
-        // ProjectPropertyElementLink support
-        public string Value { get => PropertyXml.Value; set => PropertyXml.Value = value; }
-        public void ChangeName(string newName) { PropertyXml.Name = newName; }
-
+        // ProjectExtensionsElementLink support
+        public string Content { get => this.ExtensionXml.Content; set => this.ExtensionXml.Content = value; }
+        public string GetSubElement(string name) { return this.ExtensionXml[name]; }
+        public void SetSubElement(string name, string value) { this.ExtensionXml[name] = value; }
     }
 
-    internal class MockProjectPropertyElementLink : ProjectPropertyElementLink, ILinkMock, IProjectElementLinkHelper
+    internal class MockProjectExtensionsElementLink : ProjectExtensionsElementLink, ILinkMock, IProjectElementLinkHelper
     {
-        public MockProjectPropertyElementLink(MockProjectPropertyElementLinkRemoter proxy, ProjectCollectionLinker linker)
+        public MockProjectExtensionsElementLink(MockProjectExtensionsElementLinkRemoter proxy, ProjectCollectionLinker linker)
         {
             this.Linker = linker;
             this.Proxy = proxy;
         }
 
         public ProjectCollectionLinker Linker { get; }
-        public MockProjectPropertyElementLinkRemoter Proxy { get; }
+        public MockProjectExtensionsElementLinkRemoter Proxy { get; }
         object ILinkMock.Remoter => this.Proxy;
         MockProjectElementLinkRemoter IProjectElementLinkHelper.ElementProxy => this.Proxy;
 
-        public override string Value { get => this.Proxy.Value; set => this.Proxy.Value = value; }
-        public override void ChangeName(string newName)
-        {
-            this.Proxy.ChangeName(newName);
-        }
+        // - ProjectExtensionsElementLink ------
+        public override string Content { get => Proxy.Content; set => Proxy.Content = value; }
+        public override string GetSubElement(string name) { return this.Proxy.GetSubElement(name); }
+        public override void SetSubElement(string name, string value) { this.Proxy.SetSubElement(name, value); }
+        // -------------------------------------
 
         #region ProjectElementLink redirectors
         private IProjectElementLinkHelper EImpl => (IProjectElementLinkHelper)this;

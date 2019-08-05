@@ -14,6 +14,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using Microsoft.Build.Framework;
     using Microsoft.Build.Logging;
     using System.Diagnostics;
+    using System.Runtime.CompilerServices;
 
     /// <summary>
     /// The C# does not really provide a easy way to efficiently implement inheritance in cases like this
@@ -32,109 +33,134 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     /// </summary>
     internal static class InheritanceImplementationHelpers
     {
+        // this is so we dont use ?. everywhere.
+        // for null remoters the local object is always null
+        public static ProjectElement Import(this MockProjectElementLinkRemoter remoter, ProjectCollectionLinker remote)
+        {
+            if (remoter == null)
+            {
+                return null;
+            }
+
+            return remoter.ImportImpl(remote);
+        }
+
         #region ProjectElementLink implementation
         public static ProjectElementContainer GetParent(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return (ProjectElementContainer)xml.ElementProxy.Parent.Import(xml.Linker);
         }
 
         public static ProjectRootElement GetContainingProject(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return (ProjectRootElement)xml.ElementProxy.ContainingProject.Import(xml.Linker);
         }
 
         public static string GetElementName(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.ElementName;
         }
 
         public static string GetOuterElement(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.OuterElement;
         }
 
         public static bool GetExpressedAsAttribute(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.ExpressedAsAttribute;
         }
 
-        public static bool SetExpressedAsAttribute(this IProjectElementLinkHelper xml, bool value)
+        public static void SetExpressedAsAttribute(this IProjectElementLinkHelper xml, bool value)
         {
-            throw new NotImplementedException();
+            xml.ElementProxy.ExpressedAsAttribute = value;
         }
         public static ProjectElement GetPreviousSibling(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.PreviousSibling.Import(xml.Linker);
         }
 
         public static ProjectElement GetNextSibling(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.NextSibling.Import(xml.Linker);
         }
 
         public static ElementLocation GetLocation(this IProjectElementLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.Location;
         }
 
         public static void CopyFrom(this IProjectElementLinkHelper xml, ProjectElement element)
         {
-            throw new NotImplementedException();
+            xml.ElementProxy.CopyFrom(MockProjectElementLinkRemoter.Export(xml.Linker, element));
         }
 
         public static ProjectElement CreateNewInstance(this IProjectElementLinkHelper xml, ProjectRootElement owner)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.CreateNewInstance(xml.Linker.Export<ProjectElement, MockProjectRootElementLinkRemoter>(owner)).Import(xml.Linker);
         }
 
         public static ElementLocation GetAttributeLocation(this IProjectElementLinkHelper xml, string attributeName)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.GetAttributeLocation(attributeName);
         }
 
         public static string GetAttributeValue(this IProjectElementLinkHelper xml, string attributeName, bool nullIfNotExists)
         {
-            throw new NotImplementedException();
+            return xml.ElementProxy.GetAttributeValue(attributeName, nullIfNotExists);
         }
 
         public static void SetOrRemoveAttribute(this IProjectElementLinkHelper xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param)
         {
-            throw new NotImplementedException();
+            xml.ElementProxy.SetOrRemoveAttribute(name, value, allowSettingEmptyAttributes, reason, param);
         }
         #endregion
 
         #region ProjectElementContainerLink implementation
         public static int GetCount(this IProjectElementContainerLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ContainerProxy.Count;
         }
 
         public static ProjectElement GetFirstChild(this IProjectElementContainerLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ContainerProxy.FirstChild.Import(xml.Linker);
         }
 
         public static ProjectElement GetLastChild(this IProjectElementContainerLinkHelper xml)
         {
-            throw new NotImplementedException();
+            return xml.ContainerProxy.LastChild.Import(xml.Linker);
         }
 
-        public static void InsertAfterChild(this IProjectElementContainerLinkHelper xml, ProjectElement child, ProjectElement reference) { throw new NotImplementedException(); }
+        public static void InsertAfterChild(this IProjectElementContainerLinkHelper xml, ProjectElement child, ProjectElement reference)
+        {
+            var childRemote = MockProjectElementLinkRemoter.Export(xml.Linker, child);
+            var referenceRemote = MockProjectElementLinkRemoter.Export(xml.Linker, reference);
+            xml.ContainerProxy.InsertAfterChild(childRemote, referenceRemote);
+        }
         public static void InsertBeforeChild(this IProjectElementContainerLinkHelper xml, ProjectElement child, ProjectElement reference)
         {
-            throw new NotImplementedException();
+            var childRemote = MockProjectElementLinkRemoter.Export(xml.Linker, child);
+            var referenceRemote = MockProjectElementLinkRemoter.Export(xml.Linker, reference);
+            xml.ContainerProxy.InsertBeforeChild(childRemote, referenceRemote);
         }
         public static void AddInitialChild(this IProjectElementContainerLinkHelper xml, ProjectElement child)
         {
-            throw new NotImplementedException();
+            var childRemote = MockProjectElementLinkRemoter.Export(xml.Linker, child);
+            xml.ContainerProxy.AddInitialChild(childRemote);
         }
         public static ProjectElementContainer DeepClone(this IProjectElementContainerLinkHelper xml, ProjectRootElement factory, ProjectElementContainer parent)
         {
-            throw new NotImplementedException();
+            var factoryRemote = xml.Linker.Export<ProjectElement, MockProjectRootElementLinkRemoter>(factory);
+            var parentRemote = (MockProjectElementContainerLinkRemoter) MockProjectElementLinkRemoter.Export(xml.Linker, parent);
+            var result  = xml.ContainerProxy.DeepClone(factoryRemote, parentRemote);
+
+            return (ProjectElementContainer)result.Import(xml.Linker);
         }
+
         public static void RemoveChild(this IProjectElementContainerLinkHelper xml, ProjectElement child)
         {
-            throw new NotImplementedException();
+            xml.ContainerProxy.RemoveChild(MockProjectElementLinkRemoter.Export(xml.Linker, child));
         }
 
         #endregion
@@ -143,10 +169,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal interface IProjectElementContainerLinkHelper
     {
+        ProjectCollectionLinker Linker { get; }
+        MockProjectElementContainerLinkRemoter ContainerProxy { get; }
     }
 
     internal interface IProjectElementLinkHelper
     {
+        ProjectCollectionLinker Linker { get; }
+        MockProjectElementLinkRemoter ElementProxy { get; }
     }
 
 }

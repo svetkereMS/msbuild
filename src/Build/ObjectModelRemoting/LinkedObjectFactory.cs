@@ -88,6 +88,10 @@ namespace Microsoft.Build.ObjectModelRemoting
             xml.AddInitialChild(child);
         }
 
+        public void ChangeItemType(ProjectItemElement xml, string newType)
+        {
+            xml.ChangeItemType(newType);
+        }
         public ProjectElementContainer DeepClone(ProjectElementContainer xml, ProjectRootElement factory, ProjectElementContainer parent)
         {
             return ProjectElementContainer.DeepClone(xml, factory, parent);

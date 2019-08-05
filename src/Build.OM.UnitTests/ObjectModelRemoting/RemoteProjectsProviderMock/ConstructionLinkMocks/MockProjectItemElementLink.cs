@@ -6,45 +6,44 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using Microsoft.Build.Construction;
     using Microsoft.Build.ObjectModelRemoting;
 
-    internal class MockProjectPropertyElementLinkRemoter : MockProjectElementLinkRemoter
+    internal class MockProjectItemElementLinkRemoter : MockProjectElementContainerLinkRemoter
     {
-        public ProjectPropertyElement PropertyXml => (ProjectPropertyElement)Source;
+        public ProjectItemElement ItemXml => (ProjectItemElement)Source;
 
         public override ProjectElement ImportImpl(ProjectCollectionLinker remote)
         {
-            return remote.Import<ProjectElement, MockProjectPropertyElementLinkRemoter>(this);
+            return remote.Import<ProjectElement, MockProjectItemElementLinkRemoter>(this);
         }
 
         public override ProjectElement CreateLinkedObject(ProjectCollectionLinker remote)
         {
-            var link = new MockProjectPropertyElementLink(this, remote);
+            var link = new MockProjectItemElementLink(this, remote);
             return remote.LinkFactory.Create(link);
         }
 
-        // ProjectPropertyElementLink support
-        public string Value { get => PropertyXml.Value; set => PropertyXml.Value = value; }
-        public void ChangeName(string newName) { PropertyXml.Name = newName; }
-
+        public void ChangeItemType(string newType)
+        {
+            this.OwningCollection.LinkFactory.ChangeItemType(this.ItemXml, newType);
+        }
     }
 
-    internal class MockProjectPropertyElementLink : ProjectPropertyElementLink, ILinkMock, IProjectElementLinkHelper
+    internal class MockProjectItemElementLink : ProjectItemElementLink, ILinkMock, IProjectElementLinkHelper, IProjectElementContainerLinkHelper
     {
-        public MockProjectPropertyElementLink(MockProjectPropertyElementLinkRemoter proxy, ProjectCollectionLinker linker)
+        public MockProjectItemElementLink(MockProjectItemElementLinkRemoter proxy, ProjectCollectionLinker linker)
         {
             this.Linker = linker;
             this.Proxy = proxy;
         }
 
         public ProjectCollectionLinker Linker { get; }
-        public MockProjectPropertyElementLinkRemoter Proxy { get; }
+        public MockProjectItemElementLinkRemoter Proxy { get; }
         object ILinkMock.Remoter => this.Proxy;
         MockProjectElementLinkRemoter IProjectElementLinkHelper.ElementProxy => this.Proxy;
+        MockProjectElementContainerLinkRemoter IProjectElementContainerLinkHelper.ContainerProxy => this.Proxy;
 
-        public override string Value { get => this.Proxy.Value; set => this.Proxy.Value = value; }
-        public override void ChangeName(string newName)
-        {
-            this.Proxy.ChangeName(newName);
-        }
+        // ProjectItemElementLink -----
+        public override void ChangeItemType(string newType) { this.Proxy.ChangeItemType(newType); }
+        // ----------------------------
 
         #region ProjectElementLink redirectors
         private IProjectElementLinkHelper EImpl => (IProjectElementLinkHelper)this;
@@ -64,6 +63,18 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         {
             EImpl.SetOrRemoveAttribute(name, value, allowSettingEmptyAttributes, reason, param);
         }
+        #endregion
+
+        #region ProjectElementContainer link redirectors
+        private IProjectElementContainerLinkHelper CImpl => (IProjectElementContainerLinkHelper)this;
+        public override int Count => CImpl.GetCount();
+        public override ProjectElement FirstChild => CImpl.GetFirstChild();
+        public override ProjectElement LastChild => CImpl.GetLastChild();
+        public override void InsertAfterChild(ProjectElement child, ProjectElement reference) { CImpl.InsertAfterChild(child, reference); }
+        public override void InsertBeforeChild(ProjectElement child, ProjectElement reference) { CImpl.InsertBeforeChild(child, reference); }
+        public override void AddInitialChild(ProjectElement child) { CImpl.AddInitialChild(child); }
+        public override ProjectElementContainer DeepClone(ProjectRootElement factory, ProjectElementContainer parent) { return CImpl.DeepClone(factory, parent); }
+        public override void RemoveChild(ProjectElement child) { CImpl.RemoveChild(child); }
         #endregion
     }
 }

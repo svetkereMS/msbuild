@@ -3,71 +3,64 @@
 
 namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
-    using System;
     using System.Collections.Generic;
-    using System.IO;
     using Microsoft.Build.Construction;
-    using Microsoft.Build.Evaluation;
-    using Microsoft.Build.Evaluation.Context;
-    using Microsoft.Build.Execution;
     using Microsoft.Build.ObjectModelRemoting;
-    using Microsoft.Build.Framework;
-    using Microsoft.Build.Logging;
-    using System.Diagnostics;
 
-    internal abstract class MockProjectElementContainerLinkRemoter : MockProjectElementLinkRemoter
+    internal class MockProjectTaskElementLinkRemoter : MockProjectElementContainerLinkRemoter
     {
-        public ProjectElementContainer ContainerXml => (ProjectElementContainer)Source;
+        public ProjectTaskElement TaskXml => (ProjectTaskElement)Source;
 
-        // ProjectElementContainerLink support
-        public int Count => ContainerXml.Count;
-        public MockProjectElementLinkRemoter FirstChild => this.Export(ContainerXml.FirstChild);
-        public MockProjectElementLinkRemoter LastChild => this.Export(ContainerXml.LastChild);
-
-        public void InsertAfterChild(MockProjectElementLinkRemoter child, MockProjectElementLinkRemoter reference)
+        public override ProjectElement ImportImpl(ProjectCollectionLinker remote)
         {
-            this.ContainerXml.InsertAfterChild(child.Import(OwningCollection), reference.Import(OwningCollection));
+            return remote.Import<ProjectElement, MockProjectTaskElementLinkRemoter>(this);
         }
 
-        public void InsertBeforeChild(MockProjectElementLinkRemoter child, MockProjectElementLinkRemoter reference)
+        public override ProjectElement CreateLinkedObject(ProjectCollectionLinker remote)
         {
-            this.ContainerXml.InsertBeforeChild(child.Import(OwningCollection), reference.Import(OwningCollection));
+            var link = new MockProjectTaskElementLink(this, remote);
+            return remote.LinkFactory.Create(link);
         }
-
-        public void AddInitialChild(MockProjectElementLinkRemoter child)
+        // ProjectTaskElementLink remote
+        public IDictionary<string, string> Parameters
         {
-            this.OwningCollection.LinkFactory.AddInitialChild(this.ContainerXml, child.Import(OwningCollection));
+            get
+            {
+                var local = this.TaskXml.Parameters;
+                return local == null ? local : new Dictionary<string, string>(local);
+            }
         }
-
-        public MockProjectElementContainerLinkRemoter DeepClone(MockProjectRootElementLinkRemoter factory, MockProjectElementContainerLinkRemoter parent)
-        {
-            var pre = (ProjectRootElement)factory.Import(OwningCollection);
-            var pec = (ProjectElementContainer)parent.Import(OwningCollection);
-            var result = this.OwningCollection.LinkFactory.DeepClone(this.ContainerXml, pre, pec);
-            return (MockProjectElementContainerLinkRemoter)this.Export(result);
-        }
-
-        public void RemoveChild(MockProjectElementLinkRemoter child)
-        {
-            this.ContainerXml.RemoveChild(child.Import(this.OwningCollection));
-        }
+        public IEnumerable<KeyValuePair<string, ElementLocation>> ParameterLocations => this.TaskXml.ParameterLocations;
+        public string GetParameter(string name) { return this.TaskXml.GetParameter(name); }
+        public void SetParameter(string name, string unevaluatedValue) { this.TaskXml.SetParameter(name, unevaluatedValue); }
+        public void RemoveParameter(string name) { this.TaskXml.RemoveParameter(name); }
+        public void RemoveAllParameters() { this.TaskXml.RemoveAllParameters(); }
     }
 
-    // not used - just a copy/paste template for remoting support objects of Construction model hierarchical containers.
-    internal class TemplateProjectElementContainerLink : ProjectElementContainerLink, ILinkMock, IProjectElementLinkHelper, IProjectElementContainerLinkHelper
+    internal class MockProjectTaskElementLink : ProjectTaskElementLink, ILinkMock, IProjectElementLinkHelper, IProjectElementContainerLinkHelper
     {
-        public TemplateProjectElementContainerLink(MockProjectElementContainerLinkRemoter proxy, ProjectCollectionLinker linker)
+        public MockProjectTaskElementLink(MockProjectTaskElementLinkRemoter proxy, ProjectCollectionLinker linker)
         {
             this.Linker = linker;
             this.Proxy = proxy;
         }
 
-        public MockProjectElementContainerLinkRemoter Proxy { get; }
         public ProjectCollectionLinker Linker { get; }
+        public MockProjectTaskElementLinkRemoter Proxy { get; }
         object ILinkMock.Remoter => this.Proxy;
         MockProjectElementLinkRemoter IProjectElementLinkHelper.ElementProxy => this.Proxy;
         MockProjectElementContainerLinkRemoter IProjectElementContainerLinkHelper.ContainerProxy => this.Proxy;
 
+        // ProjectTaskElementLink -----
+        public override IDictionary<string, string> Parameters => this.Proxy.Parameters;
+        public override IEnumerable<KeyValuePair<string, ElementLocation>> ParameterLocations => this.Proxy.ParameterLocations;
+        public override string GetParameter(string name) { return this.Proxy.GetParameter(name); }
+        // hmm did not know can use => on functions, can clean the milion other cases some tiem ...
+        public override void SetParameter(string name, string unevaluatedValue) =>  this.Proxy.SetParameter(name, unevaluatedValue);
+        public override void RemoveParameter(string name) => Proxy.RemoveParameter(name);
+        public override void RemoveAllParameters() => Proxy.RemoveAllParameters();
+
+        // ----------------------------
 
         #region ProjectElementLink redirectors
         private IProjectElementLinkHelper EImpl => (IProjectElementLinkHelper)this;
@@ -101,5 +94,4 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public override void RemoveChild(ProjectElement child) { CImpl.RemoveChild(child); }
         #endregion
     }
-
 }
