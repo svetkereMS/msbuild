@@ -54,6 +54,21 @@ namespace Microsoft.Build.ObjectModelRemoting
             return linkable?.Link;
         }
 
+        public bool GetExpressedAsAttribute(ProjectElement xml)
+        {
+            return xml.ExpressedAsAttribute;
+        }
+
+        public void SetExpressedAsAttribute(ProjectElement xml, bool value)
+        {
+            xml.ExpressedAsAttribute = value;
+        }
+
+        public ElementLocation GetAttributeLocation(ProjectElement xml, string attributeName)
+        {
+            return xml.GetAttributeLocation(attributeName);
+        }
+
         #region Evaluation
 
         public ProjectItem Create(ProjectItemLink link, Project project = null, ProjectItemElement xml = null)
