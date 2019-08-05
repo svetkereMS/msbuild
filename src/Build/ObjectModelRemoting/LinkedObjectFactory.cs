@@ -68,6 +68,35 @@ namespace Microsoft.Build.ObjectModelRemoting
         {
             return xml.GetAttributeLocation(attributeName);
         }
+        public string GetAttributeValue(ProjectElement xml, string attributeName, bool nullIfNotExists)
+        {
+            return xml.GetAttributeValue(attributeName, nullIfNotExists);
+        }
+
+        public void SetOrRemoveAttribute(ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param)
+        {
+            xml.SetOrRemoveAttribute(name, value, reason, param);
+        }
+
+        public void MarkDirty(ProjectElement xml, string reason, string param)
+        {
+            xml.MarkDirty(reason, param);
+        }
+
+        public void AddInitialChild(ProjectElementContainer xml, ProjectElement child)
+        {
+            xml.AddInitialChild(child);
+        }
+
+        public ProjectElementContainer DeepClone(ProjectElementContainer xml, ProjectRootElement factory, ProjectElementContainer parent)
+        {
+            return ProjectElementContainer.DeepClone(xml, factory, parent);
+        }
+
+        public ProjectElement CreateNewInstance(ProjectElement xml, ProjectRootElement owner)
+        {
+            return ProjectElement.CreateNewInstance(xml, owner);
+        }
 
         #region Evaluation
 

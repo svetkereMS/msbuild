@@ -22,18 +22,20 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public override Project CreateLinkedObject(ProjectCollectionLinker remote)
         {
-            var link = new MockProjectLink(this);
+            var link = new MockProjectLink(this, remote);
             return remote.LinkFactory.Create(link);
         }
     }
 
     internal class MockProjectLink : ProjectLink, ILinkMock
     {
-        public MockProjectLink(MockProjectLinkRemoter proxy)
+        public MockProjectLink(MockProjectLinkRemoter proxy, ProjectCollectionLinker linker)
         {
+            this.Linker = linker;
             this.Proxy = proxy;
         }
 
+        public ProjectCollectionLinker Linker { get; }
         public MockProjectLinkRemoter Proxy { get; }
         object ILinkMock.Remoter => this.Proxy;
 

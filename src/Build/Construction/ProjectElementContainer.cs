@@ -413,6 +413,11 @@ namespace Microsoft.Build.Construction
             return clone;
         }
 
+        internal static ProjectElementContainer DeepClone(ProjectElementContainer xml, ProjectRootElement factory, ProjectElementContainer parent)
+        {
+            return xml.DeepClone(factory, parent);
+        }
+
         private void SetElementAsAttributeValue(ProjectElement child)
         {
             ErrorUtilities.VerifyThrow(Link == null, "External project");
@@ -599,7 +604,7 @@ namespace Microsoft.Build.Construction
         /// <summary>
         /// Sets the first child in this container
         /// </summary>
-        private void AddInitialChild(ProjectElement child)
+        internal void AddInitialChild(ProjectElement child)
         {
             ErrorUtilities.VerifyThrow(FirstChild == null && LastChild == null, "Expecting no children");
 

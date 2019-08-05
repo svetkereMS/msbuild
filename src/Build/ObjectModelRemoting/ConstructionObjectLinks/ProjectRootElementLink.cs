@@ -203,6 +203,6 @@ namespace Microsoft.Build.ObjectModelRemoting
         /// <summary>
         /// Facilitate remoting the <see cref="ProjectRootElement.MarkDirty"/>.
         /// </summary>
-        internal abstract void MarkDirty(string reason, string param);
+        public abstract void MarkDirty(string reason, string param);
     }
 }

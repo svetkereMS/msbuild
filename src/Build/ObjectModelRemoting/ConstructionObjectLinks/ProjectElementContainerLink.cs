@@ -42,7 +42,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract void AddInitialChild(ProjectElement child);
 
         /// <summary>
-        /// Facilitate remoting the <see cref="ProjectElementContainer.DeepClone"/>.
+        /// helps implementation the <see cref="ProjectElementContainer.DeepCopyFrom"/>.
         /// </summary>
         public abstract ProjectElementContainer DeepClone(ProjectRootElement factory, ProjectElementContainer parent);
 

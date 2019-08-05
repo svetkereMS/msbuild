@@ -491,6 +491,16 @@ namespace Microsoft.Build.Construction
         /// <param name="owner">The factory to use for creating the new instance.</param>
         protected abstract ProjectElement CreateNewInstance(ProjectRootElement owner);
 
+        internal static ProjectElement CreateNewInstance(ProjectElement xml, ProjectRootElement owner)
+        {
+            if (xml.Link != null)
+            {
+                return xml.Link.CreateNewInstance(owner);
+            }
+
+            return xml.CreateNewInstance(owner);
+        }
+
         internal ElementLocation GetAttributeLocation(string attributeName)
         {
             return Link != null ? Link.GetAttributeLocation(attributeName) : XmlElement.GetAttributeLocation(attributeName);

@@ -1638,6 +1638,7 @@ namespace Microsoft.Build.ObjectModelRemoting
     {
         internal LinkedObjectsFactory() { }
         public Microsoft.Build.Evaluation.ProjectCollection Collection { get { throw null; } }
+        public void AddInitialChild(Microsoft.Build.Construction.ProjectElementContainer xml, Microsoft.Build.Construction.ProjectElement child) { }
         public Microsoft.Build.Evaluation.ResolvedImport Create(Microsoft.Build.Construction.ProjectImportElement importingElement, Microsoft.Build.Construction.ProjectRootElement importedProject, int versionEvaluated, Microsoft.Build.Framework.SdkResult sdkResult, bool isImported) { throw null; }
         public Microsoft.Build.Construction.ProjectChooseElement Create(Microsoft.Build.ObjectModelRemoting.ProjectChooseElementLink link) { throw null; }
         public Microsoft.Build.Construction.ProjectExtensionsElement Create(Microsoft.Build.ObjectModelRemoting.ProjectExtensionsElementLink link) { throw null; }
@@ -1667,8 +1668,16 @@ namespace Microsoft.Build.ObjectModelRemoting
         public Microsoft.Build.Construction.ProjectUsingTaskParameterElement Create(Microsoft.Build.ObjectModelRemoting.ProjectUsingTaskParameterElementLink link) { throw null; }
         public Microsoft.Build.Construction.ProjectWhenElement Create(Microsoft.Build.ObjectModelRemoting.ProjectWhenElementLink link) { throw null; }
         public Microsoft.Build.Construction.UsingTaskParameterGroupElement Create(Microsoft.Build.ObjectModelRemoting.UsingTaskParameterGroupElementLink link) { throw null; }
+        public Microsoft.Build.Construction.ProjectElement CreateNewInstance(Microsoft.Build.Construction.ProjectElement xml, Microsoft.Build.Construction.ProjectRootElement owner) { throw null; }
+        public Microsoft.Build.Construction.ProjectElementContainer DeepClone(Microsoft.Build.Construction.ProjectElementContainer xml, Microsoft.Build.Construction.ProjectRootElement factory, Microsoft.Build.Construction.ProjectElementContainer parent) { throw null; }
         public static Microsoft.Build.ObjectModelRemoting.LinkedObjectsFactory Get(Microsoft.Build.Evaluation.ProjectCollection collection) { throw null; }
+        public Microsoft.Build.Construction.ElementLocation GetAttributeLocation(Microsoft.Build.Construction.ProjectElement xml, string attributeName) { throw null; }
+        public string GetAttributeValue(Microsoft.Build.Construction.ProjectElement xml, string attributeName, bool nullIfNotExists) { throw null; }
+        public bool GetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml) { throw null; }
         public object GetLink(object localObject) { throw null; }
+        public void MarkDirty(Microsoft.Build.Construction.ProjectElement xml, string reason, string param) { }
+        public void SetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml, bool value) { }
+        public void SetOrRemoveAttribute(Microsoft.Build.Construction.ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param) { }
     }
     public abstract partial class ProjectChooseElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {
@@ -1902,6 +1911,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract Microsoft.Build.Construction.ProjectUsingTaskParameterElement CreateUsingTaskParameterElement(string name, string output, string required, string parameterType);
         public abstract Microsoft.Build.Construction.UsingTaskParameterGroupElement CreateUsingTaskParameterGroupElement();
         public abstract Microsoft.Build.Construction.ProjectWhenElement CreateWhenElement(string condition);
+        public abstract void MarkDirty(string reason, string param);
         public abstract void ReloadFrom(string path, bool throwIfUnsavedChanges, bool preserveFormatting);
         public abstract void ReloadFrom(System.Xml.XmlReader reader, bool throwIfUnsavedChanges, bool preserveFormatting);
         public abstract void Save(System.IO.TextWriter writer);

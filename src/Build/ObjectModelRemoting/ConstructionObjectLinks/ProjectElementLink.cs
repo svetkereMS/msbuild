@@ -102,7 +102,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract void CopyFrom(ProjectElement element);
 
         /// <summary>
-        /// Facilitate remoting to remote <see cref="ProjectElement.CreateNewInstance"/>.
+        /// Facilitate remoting to remote <see cref="ProjectElement.CreateNewInstance(ProjectRootElement)"/>.
         /// </summary>
         public abstract ProjectElement CreateNewInstance(ProjectRootElement owner);
     }
