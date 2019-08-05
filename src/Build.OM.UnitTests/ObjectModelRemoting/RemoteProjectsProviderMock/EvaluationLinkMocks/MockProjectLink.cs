@@ -16,6 +16,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal class MockProjectLinkRemoter : MockLinkRemoter<Project>
     {
+        public MockProjectLinkRemoter()
+        {
+        }
+
         public override Project CreateLinkedObject(ProjectCollectionLinker remote)
         {
             var link = new MockProjectLink(this);

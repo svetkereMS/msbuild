@@ -52,13 +52,67 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
     }
 
-    internal struct ProjectElementLinkRemoterHelper
+    internal class MockProjectPropertyElementLink : ProjectPropertyElementLink, ILinkMock, IProjectElementLinkHelper
     {
-        ProjectElement Source;
-        ProjectCollectionLinker Linker;
+        public MockProjectPropertyElementLinkRemoter Proxy { get; }
+        object ILinkMock.Remoter => this.Proxy;
 
-        public static IProjectElementRemoter CreateForObject(ProjectElement xml)
+        public MockProjectPropertyElementLink(MockProjectPropertyElementLinkRemoter proxy)
         {
+            this.Proxy = proxy;
+        }
+
+
+        public override string Value { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public override void ChangeName(string newName)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        #region ProjectElementLink redirectors
+        private IProjectElementLinkHelper EImpl => (IProjectElementLinkHelper)this;
+        public override ProjectElementContainer Parent => EImpl.GetParent();
+        public override ProjectRootElement ContainingProject => EImpl.GetContainingProject();
+        public override string ElementName => EImpl.GetElementName();
+        public override string OuterElement => EImpl.GetOuterElement();
+        public override bool ExpressedAsAttribute { get => EImpl.GetExpressedAsAttribute(); set => EImpl.SetExpressedAsAttribute(value); }
+        public override ProjectElement PreviousSibling => EImpl.GetPreviousSibling();
+        public override ProjectElement NextSibling => EImpl.GetNextSibling();
+        public override ElementLocation Location => EImpl.GetLocation();
+        public override void CopyFrom(ProjectElement element) { EImpl.CopyFrom(element); }
+        public override ProjectElement CreateNewInstance(ProjectRootElement owner) { return EImpl.CreateNewInstance(owner); }
+        public override ElementLocation GetAttributeLocation(string attributeName) { return EImpl.GetAttributeLocation(attributeName); }
+        public override string GetAttributeValue(string attributeName, bool nullIfNotExists) { return EImpl.GetAttributeValue(attributeName, nullIfNotExists); }
+        public override void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param)
+        {
+            EImpl.SetOrRemoveAttribute(name, value, allowSettingEmptyAttributes, reason, param);
+        }
+        #endregion
+    }
+
+
+    internal class MockProjectPropertyElementLinkRemoter : ProjectElementLinkRemoter
+    {
+        ProjectPropertyElement PropertyXml => (ProjectPropertyElement)Source;
+
+        public override ProjectElement CreateLinkedObject(ProjectCollectionLinker remote)
+        {
+            var link = new MockProjectPropertyElementLink(this);
+            return remote.LinkFactory.Create(link);
+        }
+    }
+
+    internal abstract class ProjectElementLinkRemoter : MockLinkRemoter<ProjectElement>
+    {
+        public static ProjectElementLinkRemoter CreateForObject(ProjectElement xml)
+        {
+            if (xml == null) return null;
+            var 
+            if ((object x = xml) != null)
+            {
+
+            }
         }
 
         public IProjectElementContainerRemoter Parent => ProjectContainerElementLinkRemoterHelper.CreateForObject(Source.Parent);
