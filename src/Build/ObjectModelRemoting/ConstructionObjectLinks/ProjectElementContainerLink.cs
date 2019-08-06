@@ -50,6 +50,12 @@ namespace Microsoft.Build.ObjectModelRemoting
         /// Facilitate remoting the <see cref="ProjectElementContainer.RemoveChild"/>.
         /// </summary>
         public abstract void RemoveChild(ProjectElement child);
+
+        /// <summary>
+        /// ExternalProjectsProvider helpers
+        /// </summary>
+        public static void AddInitialChild(ProjectElementContainer xml, ProjectElement child) => xml.AddInitialChild(child);
+        public static ProjectElementContainer DeepClone(ProjectElementContainer xml, ProjectRootElement factory, ProjectElementContainer parent) => ProjectElementContainer.DeepClone(xml, factory, parent);
     }
 
     // the "equivalence" classes in cases when we don't need additional functionality,

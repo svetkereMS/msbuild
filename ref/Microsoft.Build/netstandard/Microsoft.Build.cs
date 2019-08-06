@@ -1638,8 +1638,6 @@ namespace Microsoft.Build.ObjectModelRemoting
     {
         internal LinkedObjectsFactory() { }
         public Microsoft.Build.Evaluation.ProjectCollection Collection { get { throw null; } }
-        public void AddInitialChild(Microsoft.Build.Construction.ProjectElementContainer xml, Microsoft.Build.Construction.ProjectElement child) { }
-        public void ChangeItemType(Microsoft.Build.Construction.ProjectItemElement xml, string newType) { }
         public Microsoft.Build.Evaluation.ResolvedImport Create(Microsoft.Build.Construction.ProjectImportElement importingElement, Microsoft.Build.Construction.ProjectRootElement importedProject, int versionEvaluated, Microsoft.Build.Framework.SdkResult sdkResult, bool isImported) { throw null; }
         public Microsoft.Build.Construction.ProjectChooseElement Create(Microsoft.Build.ObjectModelRemoting.ProjectChooseElementLink link) { throw null; }
         public Microsoft.Build.Construction.ProjectExtensionsElement Create(Microsoft.Build.ObjectModelRemoting.ProjectExtensionsElementLink link) { throw null; }
@@ -1669,16 +1667,8 @@ namespace Microsoft.Build.ObjectModelRemoting
         public Microsoft.Build.Construction.ProjectUsingTaskParameterElement Create(Microsoft.Build.ObjectModelRemoting.ProjectUsingTaskParameterElementLink link) { throw null; }
         public Microsoft.Build.Construction.ProjectWhenElement Create(Microsoft.Build.ObjectModelRemoting.ProjectWhenElementLink link) { throw null; }
         public Microsoft.Build.Construction.UsingTaskParameterGroupElement Create(Microsoft.Build.ObjectModelRemoting.UsingTaskParameterGroupElementLink link) { throw null; }
-        public Microsoft.Build.Construction.ProjectElement CreateNewInstance(Microsoft.Build.Construction.ProjectElement xml, Microsoft.Build.Construction.ProjectRootElement owner) { throw null; }
-        public Microsoft.Build.Construction.ProjectElementContainer DeepClone(Microsoft.Build.Construction.ProjectElementContainer xml, Microsoft.Build.Construction.ProjectRootElement factory, Microsoft.Build.Construction.ProjectElementContainer parent) { throw null; }
         public static Microsoft.Build.ObjectModelRemoting.LinkedObjectsFactory Get(Microsoft.Build.Evaluation.ProjectCollection collection) { throw null; }
-        public Microsoft.Build.Construction.ElementLocation GetAttributeLocation(Microsoft.Build.Construction.ProjectElement xml, string attributeName) { throw null; }
-        public string GetAttributeValue(Microsoft.Build.Construction.ProjectElement xml, string attributeName, bool nullIfNotExists) { throw null; }
-        public bool GetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml) { throw null; }
         public object GetLink(object localObject) { throw null; }
-        public void MarkDirty(Microsoft.Build.Construction.ProjectElement xml, string reason, string param) { }
-        public void SetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml, bool value) { }
-        public void SetOrRemoveAttribute(Microsoft.Build.Construction.ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param) { }
     }
     public abstract partial class ProjectChooseElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {
@@ -1691,6 +1681,8 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract Microsoft.Build.Construction.ProjectElement FirstChild { get; }
         public abstract Microsoft.Build.Construction.ProjectElement LastChild { get; }
         public abstract void AddInitialChild(Microsoft.Build.Construction.ProjectElement child);
+        public static void AddInitialChild(Microsoft.Build.Construction.ProjectElementContainer xml, Microsoft.Build.Construction.ProjectElement child) { }
+        public static Microsoft.Build.Construction.ProjectElementContainer DeepClone(Microsoft.Build.Construction.ProjectElementContainer xml, Microsoft.Build.Construction.ProjectRootElement factory, Microsoft.Build.Construction.ProjectElementContainer parent) { throw null; }
         public abstract Microsoft.Build.Construction.ProjectElementContainer DeepClone(Microsoft.Build.Construction.ProjectRootElement factory, Microsoft.Build.Construction.ProjectElementContainer parent);
         public abstract void InsertAfterChild(Microsoft.Build.Construction.ProjectElement child, Microsoft.Build.Construction.ProjectElement reference);
         public abstract void InsertBeforeChild(Microsoft.Build.Construction.ProjectElement child, Microsoft.Build.Construction.ProjectElement reference);
@@ -1708,9 +1700,16 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract Microsoft.Build.Construction.ProjectElementContainer Parent { get; }
         public abstract Microsoft.Build.Construction.ProjectElement PreviousSibling { get; }
         public abstract void CopyFrom(Microsoft.Build.Construction.ProjectElement element);
+        public static Microsoft.Build.Construction.ProjectElement CreateNewInstance(Microsoft.Build.Construction.ProjectElement xml, Microsoft.Build.Construction.ProjectRootElement owner) { throw null; }
         public abstract Microsoft.Build.Construction.ProjectElement CreateNewInstance(Microsoft.Build.Construction.ProjectRootElement owner);
+        public static Microsoft.Build.Construction.ElementLocation GetAttributeLocation(Microsoft.Build.Construction.ProjectElement xml, string attributeName) { throw null; }
         public abstract Microsoft.Build.Construction.ElementLocation GetAttributeLocation(string attributeName);
+        public static string GetAttributeValue(Microsoft.Build.Construction.ProjectElement xml, string attributeName, bool nullIfNotExists) { throw null; }
         public abstract string GetAttributeValue(string attributeName, bool nullIfNotExists);
+        public static bool GetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml) { throw null; }
+        public static void MarkDirty(Microsoft.Build.Construction.ProjectElement xml, string reason, string param) { }
+        public static void SetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml, bool value) { }
+        public static void SetOrRemoveAttribute(Microsoft.Build.Construction.ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param) { }
         public abstract void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param);
     }
     public abstract partial class ProjectExtensionsElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementLink

@@ -105,6 +105,17 @@ namespace Microsoft.Build.ObjectModelRemoting
         /// Facilitate remoting to remote <see cref="ProjectElement.CreateNewInstance(ProjectRootElement)"/>.
         /// </summary>
         public abstract ProjectElement CreateNewInstance(ProjectRootElement owner);
+
+        /// <summary>
+        /// Utility function for ExternalProjects provider
+        /// </summary>
+        public static bool GetExpressedAsAttribute(ProjectElement xml) => xml.ExpressedAsAttribute;
+        public static void SetExpressedAsAttribute(ProjectElement xml, bool value) => xml.ExpressedAsAttribute = value;
+        public static ElementLocation GetAttributeLocation(ProjectElement xml, string attributeName) => xml.GetAttributeLocation(attributeName);
+        public static string GetAttributeValue(ProjectElement xml, string attributeName, bool nullIfNotExists) => xml.GetAttributeValue(attributeName, nullIfNotExists);
+        public static void SetOrRemoveAttribute(ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param) => xml.SetOrRemoveAttribute(name, value, reason, param);
+        public static void MarkDirty(ProjectElement xml, string reason, string param) => xml.MarkDirty(reason, param);
+        public static ProjectElement CreateNewInstance(ProjectElement xml, ProjectRootElement owner) =>  ProjectElement.CreateNewInstance(xml, owner);
     }
 
     // the "equivalence" classes in cases when we don't need additional functionality,

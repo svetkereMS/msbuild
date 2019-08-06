@@ -139,7 +139,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public void ReloadFrom(string path, bool throwIfUnsavedChanges, bool preserveFormatting) { this.ProjectXml.ReloadFrom(path, throwIfUnsavedChanges, preserveFormatting); }
         public void ReloadFrom(XmlReader reader, bool throwIfUnsavedChanges, bool preserveFormatting) { this.ProjectXml.ReloadFrom(reader, throwIfUnsavedChanges, preserveFormatting); }
 
-        public void MarkDirty(string reason, string param) { this.OwningCollection.LinkFactory.MarkDirty(this.Source, reason, param); }
+        public void MarkDirty(string reason, string param) { ProjectElementLink.MarkDirty(this.Source, reason, param); }
     }
 
 

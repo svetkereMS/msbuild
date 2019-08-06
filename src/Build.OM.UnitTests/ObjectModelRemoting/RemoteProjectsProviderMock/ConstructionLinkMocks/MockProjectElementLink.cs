@@ -26,7 +26,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public string OuterElement => Source.OuterElement;
 
-        public bool ExpressedAsAttribute { get => OwningCollection.LinkFactory.GetExpressedAsAttribute(Source); set => OwningCollection.LinkFactory.SetExpressedAsAttribute(Source, value); }
+        public bool ExpressedAsAttribute { get => ProjectElementLink.GetExpressedAsAttribute(Source); set => ProjectElementLink.SetExpressedAsAttribute(Source, value); }
 
         public MockProjectElementLinkRemoter PreviousSibling => this.Export(Source.PreviousSibling);
 
@@ -42,24 +42,24 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public MockProjectElementLinkRemoter CreateNewInstance(MockProjectRootElementLinkRemoter owner)
         {
             var pre = (ProjectRootElement)owner.Import(OwningCollection);
-            var result = OwningCollection.LinkFactory.CreateNewInstance(Source, pre);
+            var result = ProjectElementLink.CreateNewInstance(Source, pre);
             return Export(result);
         }
 
         public ElementLocation GetAttributeLocation(string attributeName)
-            => OwningCollection.LinkFactory.GetAttributeLocation(Source, attributeName);
+            => ProjectElementLink.GetAttributeLocation(this.Source, attributeName);
 
         public string GetAttributeValue(string attributeName, bool nullIfNotExists)
         {
-            return OwningCollection.LinkFactory.GetAttributeValue(Source, attributeName, nullIfNotExists);
+            return ProjectElementLink.GetAttributeValue(this.Source, attributeName, nullIfNotExists);
         }
 
         public void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param)
         {
-            OwningCollection.LinkFactory.SetOrRemoveAttribute(Source, name, value, allowSettingEmptyAttributes, reason, param);
+            ProjectElementLink.SetOrRemoveAttribute(this.Source, name, value, allowSettingEmptyAttributes, reason, param);
             if (reason != null)
             {
-                OwningCollection.LinkFactory.MarkDirty(Source, reason, param);
+                ProjectElementLink.MarkDirty(this.Source, reason, param);
             }
         }
     }

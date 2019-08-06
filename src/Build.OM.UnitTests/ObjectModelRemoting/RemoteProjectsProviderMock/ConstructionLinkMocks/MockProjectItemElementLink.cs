@@ -23,7 +23,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public void ChangeItemType(string newType)
         {
-            this.OwningCollection.LinkFactory.ChangeItemType(this.ItemXml, newType);
+            this.ItemXml.ItemType = newType;
         }
     }
 

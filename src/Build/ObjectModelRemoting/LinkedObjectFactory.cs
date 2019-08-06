@@ -54,54 +54,6 @@ namespace Microsoft.Build.ObjectModelRemoting
             return linkable?.Link;
         }
 
-        public bool GetExpressedAsAttribute(ProjectElement xml)
-        {
-            return xml.ExpressedAsAttribute;
-        }
-
-        public void SetExpressedAsAttribute(ProjectElement xml, bool value)
-        {
-            xml.ExpressedAsAttribute = value;
-        }
-
-        public ElementLocation GetAttributeLocation(ProjectElement xml, string attributeName)
-        {
-            return xml.GetAttributeLocation(attributeName);
-        }
-        public string GetAttributeValue(ProjectElement xml, string attributeName, bool nullIfNotExists)
-        {
-            return xml.GetAttributeValue(attributeName, nullIfNotExists);
-        }
-
-        public void SetOrRemoveAttribute(ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param)
-        {
-            xml.SetOrRemoveAttribute(name, value, reason, param);
-        }
-
-        public void MarkDirty(ProjectElement xml, string reason, string param)
-        {
-            xml.MarkDirty(reason, param);
-        }
-
-        public void AddInitialChild(ProjectElementContainer xml, ProjectElement child)
-        {
-            xml.AddInitialChild(child);
-        }
-
-        public void ChangeItemType(ProjectItemElement xml, string newType)
-        {
-            xml.ChangeItemType(newType);
-        }
-        public ProjectElementContainer DeepClone(ProjectElementContainer xml, ProjectRootElement factory, ProjectElementContainer parent)
-        {
-            return ProjectElementContainer.DeepClone(xml, factory, parent);
-        }
-
-        public ProjectElement CreateNewInstance(ProjectElement xml, ProjectRootElement owner)
-        {
-            return ProjectElement.CreateNewInstance(xml, owner);
-        }
-
         #region Evaluation
 
         public ProjectItem Create(ProjectItemLink link, Project project = null, ProjectItemElement xml = null)

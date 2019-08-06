@@ -36,14 +36,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public void AddInitialChild(MockProjectElementLinkRemoter child)
         {
-            this.OwningCollection.LinkFactory.AddInitialChild(this.ContainerXml, child.Import(OwningCollection));
+            ProjectElementContainerLink.AddInitialChild(this.ContainerXml, child.Import(OwningCollection));
         }
 
         public MockProjectElementContainerLinkRemoter DeepClone(MockProjectRootElementLinkRemoter factory, MockProjectElementContainerLinkRemoter parent)
         {
             var pre = (ProjectRootElement)factory.Import(OwningCollection);
             var pec = (ProjectElementContainer)parent.Import(OwningCollection);
-            var result = this.OwningCollection.LinkFactory.DeepClone(this.ContainerXml, pre, pec);
+            var result = ProjectElementContainerLink.DeepClone(this.ContainerXml, pre, pec);
             return (MockProjectElementContainerLinkRemoter)this.Export(result);
         }
 
