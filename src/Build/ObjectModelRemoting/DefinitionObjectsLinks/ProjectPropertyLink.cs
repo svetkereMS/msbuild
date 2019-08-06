@@ -62,6 +62,13 @@ namespace Microsoft.Build.ObjectModelRemoting
         /// Access to remote <see cref="ProjectProperty.IsImported"/>.
         /// </summary>
         public abstract bool IsImported { get; }
+
+        /// <summary>
+        /// Helper utility for External projects provider implementation to get access of the EvaluatedValueEscaped
+        public static string GetEvaluatedValueEscaped(ProjectProperty property)
+        {
+            return property.EvaluatedValueEscapedIntenral;
+        }
     }
 
 }

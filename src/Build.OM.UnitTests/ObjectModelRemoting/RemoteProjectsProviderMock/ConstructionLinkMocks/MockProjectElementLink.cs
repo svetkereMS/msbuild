@@ -32,7 +32,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public MockProjectElementLinkRemoter NextSibling => this.Export(Source.NextSibling);
 
-        public ElementLocation Location => new ElementLocationR(Source.Location);
+        public ElementLocation Location => Source.Location;
 
         public void CopyFrom(MockProjectElementLinkRemoter element)
         {
@@ -47,9 +47,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
 
         public ElementLocation GetAttributeLocation(string attributeName)
-        {
-            return new ElementLocationR(OwningCollection.LinkFactory.GetAttributeLocation(Source, attributeName));
-        }
+            => OwningCollection.LinkFactory.GetAttributeLocation(Source, attributeName);
 
         public string GetAttributeValue(string attributeName, bool nullIfNotExists)
         {

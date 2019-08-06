@@ -13,13 +13,13 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using Microsoft.Build.ObjectModelRemoting;
     using Microsoft.Build.Framework;
     using Microsoft.Build.Logging;
+    using System.Runtime.InteropServices;
+
+
+
 
     internal class MockProjectLinkRemoter : MockLinkRemoter<Project>
     {
-        public MockProjectLinkRemoter()
-        {
-        }
-
         public override Project CreateLinkedObject(ProjectCollectionLinker remote)
         {
             var link = new MockProjectLink(this, remote);
@@ -46,68 +46,51 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public IDictionary<string, List<string>> ConditionedProperties => this.Source.ConditionedProperties;
 
-        public IDictionary<string, ProjectItemDefinition> ItemDefinitions => throw new NotImplementedException();
+        public IDictionary<string, MockProjectItemDefinitionLinkRemoter> ItemDefinitions
+            => this.OwningCollection.ExportDictionary<string, ProjectItemDefinition, MockProjectItemDefinitionLinkRemoter>(this.Source.ItemDefinitions);
 
-        public override ICollection<ProjectItem> Items => throw new NotImplementedException();
+        public ICollection<MockProjectItemLinkRemoter> Items => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.Items);
 
-        public override ICollection<ProjectItem> ItemsIgnoringCondition => throw new NotImplementedException();
+        public ICollection<MockProjectItemLinkRemoter> ItemsIgnoringCondition => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.ItemsIgnoringCondition);
 
-        public override IList<ResolvedImport> Imports => throw new NotImplementedException();
+        public IList<RemotedResolvedImport> Imports => this.Source.Imports.ConvertCollection<RemotedResolvedImport, ResolvedImport>((a) => a.Export(this.OwningCollection));
 
-        public override IList<ResolvedImport> ImportsIncludingDuplicates => throw new NotImplementedException();
-
-        public override IDictionary<string, ProjectTargetInstance> Targets => throw new NotImplementedException();
+        public IList<RemotedResolvedImport> ImportsIncludingDuplicates
+            => this.Source.Imports.ConvertCollection<RemotedResolvedImport, ResolvedImport>((a) => a.Export(this.OwningCollection));
 
         public ICollection<MockProjectPropertyLinkRemoter> AllEvaluatedProperties
             => this.OwningCollection.ExportCollection<ProjectProperty, MockProjectPropertyLinkRemoter>(this.Source.AllEvaluatedProperties);
 
 
-        public ICollection<ProjectMetadata> AllEvaluatedItemDefinitionMetadata
+        public IList<MockProjectMetadataLinkRemoter> AllEvaluatedItemDefinitionMetadata
             => this.OwningCollection.ExportCollection<ProjectMetadata, MockProjectMetadataLinkRemoter>(this.Source.AllEvaluatedItemDefinitionMetadata);
 
-        public override ICollection<ProjectItem> AllEvaluatedItems => throw new NotImplementedException();
+        public ICollection<MockProjectItemLinkRemoter> AllEvaluatedItems => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.AllEvaluatedItems);
 
         public string ToolsVersion => this.Source.ToolsVersion;
-
         public string SubToolsetVersion => this.Source.SubToolsetVersion;
-
         public bool SkipEvaluation { get => this.Source.SkipEvaluation; set => this.Source.SkipEvaluation = value; }
         public bool DisableMarkDirty { get => this.Source.DisableMarkDirty; set => this.Source.DisableMarkDirty = value; }
         public bool IsBuildEnabled { get => this.Source.IsBuildEnabled; set => this.Source.IsBuildEnabled = value; }
-
         public int LastEvaluationId => this.Source.LastEvaluationId;
-
-        public IList<ProjectItem> AddItem(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IList<ProjectItem> AddItemFast(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
-        {
-            throw new NotImplementedException();
-        }
+        public IList<MockProjectItemLinkRemoter> AddItem(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
+            => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.AddItem(itemType, unevaluatedInclude, metadata));
+        public IList<MockProjectItemLinkRemoter> AddItemFast(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
+            => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.AddItemFast(itemType, unevaluatedInclude, metadata));
 
         public string ExpandString(string unexpandedValue) => this.Source.ExpandString(unexpandedValue);
 
-        public override ICollection<ProjectItem> GetItems(string itemType)
-        {
-            throw new NotImplementedException();
-        }
+        public ICollection<MockProjectItemLinkRemoter> GetItems(string itemType)
+            => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.GetItems(itemType));
 
-        public override ICollection<ProjectItem> GetItemsByEvaluatedInclude(string evaluatedInclude)
-        {
-            throw new NotImplementedException();
-        }
+        public  ICollection<MockProjectItemLinkRemoter> GetItemsByEvaluatedInclude(string evaluatedInclude)
+            => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.GetItemsByEvaluatedInclude(evaluatedInclude));
 
-        public override ICollection<ProjectItem> GetItemsIgnoringCondition(string itemType)
-        {
-            throw new NotImplementedException();
-        }
+        public ICollection<MockProjectItemLinkRemoter> GetItemsIgnoringCondition(string itemType)
+            => this.OwningCollection.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Source.GetItemsIgnoringCondition(itemType));
 
-        public override IEnumerable<ProjectElement> GetLogicalProject()
-        {
-            throw new NotImplementedException();
-        }
+        public IEnumerable<MockProjectElementLinkRemoter> GetLogicalProject()
+            => this.OwningCollection.ExportCollection(this.Source.GetLogicalProject());
 
         public MockProjectPropertyLinkRemoter GetProperty(string name) => this.OwningCollection.Export<ProjectProperty, MockProjectPropertyLinkRemoter>(this.Source.GetProperty(name));
         public  string GetPropertyValue(string name) => this.Source.GetPropertyValue(name);
@@ -115,18 +98,13 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public void ReevaluateIfNecessary(EvaluationContext evaluationContext) => this.Source.ReevaluateIfNecessary(evaluationContext);
         public bool RemoveGlobalProperty(string name) => this.Source.RemoveGlobalProperty(name);
 
-        public bool RemoveItem(ProjectItem item)
-        {
-            throw new NotImplementedException();
-        }
+        public bool RemoveItem(MockProjectItemLinkRemoter item) => this.Source.RemoveItem(this.OwningCollection.Import<ProjectItem, MockProjectItemLinkRemoter>(item));
 
-        public void RemoveItems(IEnumerable<ProjectItem> items)
-        {
-            throw new NotImplementedException();
-        }
+        public void RemoveItems(IEnumerable<MockProjectItemLinkRemoter> items)
+            => this.Source.RemoveItems(this.OwningCollection.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(items));
 
         public bool RemoveProperty(MockProjectPropertyLinkRemoter propertyRemoter)
-            => this.Source.RemoveProperty(this.OwningCollection.Import<ProjectProperty, MockProjectPropertyLinkRemoter>(propertyRemoter);
+            => this.Source.RemoveProperty(this.OwningCollection.Import<ProjectProperty, MockProjectPropertyLinkRemoter>(propertyRemoter));
 
         public void SaveLogicalProject(TextWriter writer)
         {
@@ -153,7 +131,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         object ILinkMock.Remoter => this.Proxy;
 
         #region ProjectLink
-        #region NotImpl
         public override ProjectRootElement Xml => (ProjectRootElement)this.Proxy.Xml.Import(this.Linker);
 
         public override bool ThrowInsteadOfSplittingItemElement { get => this.Proxy.ThrowInsteadOfSplittingItemElement; set => this.Proxy.ThrowInsteadOfSplittingItemElement = value; }
@@ -168,23 +145,26 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public override IDictionary<string, List<string>> ConditionedProperties => this.Proxy.ConditionedProperties;
 
-        public override IDictionary<string, ProjectItemDefinition> ItemDefinitions => throw new NotImplementedException();
+        public override IDictionary<string, ProjectItemDefinition> ItemDefinitions
+            => this.Linker.ImportDictionary<string, ProjectItemDefinition, MockProjectItemDefinitionLinkRemoter>(this.Proxy.ItemDefinitions);
 
-        public override ICollection<ProjectItem> Items => throw new NotImplementedException();
+        public override ICollection<ProjectItem> Items => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.Items);
 
         public override ICollection<ProjectItem> ItemsIgnoringCondition => throw new NotImplementedException();
 
-        public override IList<ResolvedImport> Imports => throw new NotImplementedException();
+        public override IList<ResolvedImport> Imports
+            => this.Proxy.Imports.ConvertCollection<ResolvedImport, RemotedResolvedImport>((a) => a.Import(this.Linker));
 
-        public override IList<ResolvedImport> ImportsIncludingDuplicates => throw new NotImplementedException();
+        public override IList<ResolvedImport> ImportsIncludingDuplicates
+            => this.Proxy.ImportsIncludingDuplicates.ConvertCollection<ResolvedImport, RemotedResolvedImport>((a) => a.Import(this.Linker));
 
-        public override IDictionary<string, ProjectTargetInstance> Targets => throw new NotImplementedException();
+        public override ICollection<ProjectProperty> AllEvaluatedProperties
+            => this.Linker.ImportCollection<ProjectProperty, MockProjectPropertyLinkRemoter>(this.Proxy.AllEvaluatedProperties);
+        public override ICollection<ProjectMetadata> AllEvaluatedItemDefinitionMetadata
+            => this.Linker.ImportCollection<ProjectMetadata, MockProjectMetadataLinkRemoter>(this.Proxy.AllEvaluatedItemDefinitionMetadata);
 
-        public override ICollection<ProjectProperty> AllEvaluatedProperties => throw new NotImplementedException();
-
-        public override ICollection<ProjectMetadata> AllEvaluatedItemDefinitionMetadata => throw new NotImplementedException();
-
-        public override ICollection<ProjectItem> AllEvaluatedItems => throw new NotImplementedException();
+        public override ICollection<ProjectItem> AllEvaluatedItems
+            => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.AllEvaluatedItems);
 
         public override string ToolsVersion => this.Proxy.ToolsVersion;
 
@@ -197,30 +177,21 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public override int LastEvaluationId => this.Proxy.LastEvaluationId;
 
         public override IList<ProjectItem> AddItem(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
-        {
-            throw new NotImplementedException();
-        }
+            => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.AddItem(itemType, unevaluatedInclude, metadata));
 
         public override IList<ProjectItem> AddItemFast(string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
-        {
-            throw new NotImplementedException();
-        }
+            => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.AddItemFast(itemType, unevaluatedInclude, metadata));
 
+        // Building support is not required (and technically not supported for now
         public override bool Build(string[] targets, IEnumerable<ILogger> loggers, IEnumerable<ForwardingLoggerRecord> remoteLoggers, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
+        public override ProjectInstance CreateProjectInstance(ProjectInstanceSettings settings, EvaluationContext evaluationContext) => throw new NotImplementedException();
+        public override IDictionary<string, ProjectTargetInstance> Targets => throw new NotImplementedException();
+// --------------------------------------------------
 
-        public override ProjectInstance CreateProjectInstance(ProjectInstanceSettings settings, EvaluationContext evaluationContext)
-        {
-            throw new NotImplementedException();
-        }
+        public override string ExpandString(string unexpandedValue) => this.Proxy.ExpandString(unexpandedValue);
 
-        public override string ExpandString(string unexpandedValue)
-        {
-            throw new NotImplementedException();
-        }
-
+// TODO: Glob is not needed for the CSproj, but we might want to test it at least 
         public override List<GlobResult> GetAllGlobs(EvaluationContext evaluationContext)
         {
             throw new NotImplementedException();
@@ -245,26 +216,18 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         {
             throw new NotImplementedException();
         }
+// ---------------------------------------------------------------------------------------
 
         public override ICollection<ProjectItem> GetItems(string itemType)
-        {
-            throw new NotImplementedException();
-        }
-
+            => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.GetItems(itemType));
         public override ICollection<ProjectItem> GetItemsByEvaluatedInclude(string evaluatedInclude)
-        {
-            throw new NotImplementedException();
-        }
+            => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.GetItemsByEvaluatedInclude(evaluatedInclude));
 
         public override ICollection<ProjectItem> GetItemsIgnoringCondition(string itemType)
-        {
-            throw new NotImplementedException();
-        }
+            => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.GetItemsIgnoringCondition(itemType));
 
         public override IEnumerable<ProjectElement> GetLogicalProject()
-        {
-            throw new NotImplementedException();
-        }
+            => this.Linker.ImportCollection<ProjectElement>(this.Proxy.GetLogicalProject());
 
         public override ProjectProperty GetProperty(string name) => this.Linker.Import<ProjectProperty, MockProjectPropertyLinkRemoter>(this.Proxy.GetProperty(name));
         public override string GetPropertyValue(string name) => this.Proxy.GetPropertyValue(name);
@@ -273,14 +236,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public override bool RemoveGlobalProperty(string name) => this.Proxy.RemoveGlobalProperty(name);
 
         public override bool RemoveItem(ProjectItem item)
-        {
-            throw new NotImplementedException();
-        }
+            => this.Proxy.RemoveItem(this.Linker.Export<ProjectItem, MockProjectItemLinkRemoter>(item));
 
         public override void RemoveItems(IEnumerable<ProjectItem> items)
-        {
-            throw new NotImplementedException();
-        }
+            => this.Proxy.RemoveItems(this.Linker.ExportCollection<ProjectItem, MockProjectItemLinkRemoter>(items));
 
         public override bool RemoveProperty(ProjectProperty property) => this.Proxy.RemoveProperty(this.Linker.Export<ProjectProperty, MockProjectPropertyLinkRemoter>(property));
         public override void SaveLogicalProject(TextWriter writer) => this.Proxy.SaveLogicalProject(writer);
@@ -290,7 +249,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public override ProjectProperty SetProperty(string name, string unevaluatedValue) => this.Linker.Import<ProjectProperty, MockProjectPropertyLinkRemoter>(this.Proxy.SetProperty(name, unevaluatedValue));
 
         public override void Unload() => this.Proxy.Unload();
-        #endregion
         #endregion
     }
 }

@@ -102,11 +102,6 @@ namespace Microsoft.Build.ObjectModelRemoting
             return ProjectElement.CreateNewInstance(xml, owner);
         }
 
-        public string GetEvaluatedValueEscaped(ProjectProperty property)
-        {
-            return property.EvaluatedValueEscapedIntenral;
-        }
-
         #region Evaluation
 
         public ProjectItem Create(ProjectItemLink link, Project project = null, ProjectItemElement xml = null)

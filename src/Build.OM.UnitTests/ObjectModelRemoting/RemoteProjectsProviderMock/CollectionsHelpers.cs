@@ -6,12 +6,39 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Linq;
-
+    using Microsoft.Build.Construction;
 
     static class CollectionHelpers
     {
-        public static ICollection<T> ImportCollection<T, RMock>(this ProjectCollectionLinker importer, IEnumerable<RMock> source)
+        public static IList<A> ConvertCollection<A,B>(this IEnumerable<B> source, Func<B, A> converter)
+        {
+            if (source == null) return null;
+            // Just copy ...
+            List<A> result = new List<A>();
+            foreach (var b in source)
+            {
+                result.Add(converter(b));
+            }
+
+            return result;
+        }
+
+        public static IList<T> ImportCollection<T>(this ProjectCollectionLinker importer, IEnumerable<MockProjectElementLinkRemoter> source)
+            where T : ProjectElement
+        {
+            if (source == null) return null;
+            // Just copy ...
+            List<T> result = new List<T>();
+            foreach (var sRemoter in source)
+            {
+                var s = (T)sRemoter.Import(importer);
+                result.Add(s);
+            }
+
+            return result;
+        }
+
+        public static IList<T> ImportCollection<T, RMock>(this ProjectCollectionLinker importer, IEnumerable<RMock> source)
             where T : class
             where RMock : MockLinkRemoter<T>, new()
         {
@@ -20,14 +47,28 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             List<T> result = new List<T>();
             foreach (var sRemoter in source)
             {
-                var s = importer.Import<T, RMock>(s);
+                var s = importer.Import<T, RMock>(sRemoter);
                 result.Add(s);
             }
 
             return result;
         }
 
-        public static ICollection<RMock> ExportCollection<T, RMock>(this ProjectCollectionLinker exporter, IEnumerable<T> source)
+        public static IList<MockProjectElementLinkRemoter> ExportCollection<T>(this ProjectCollectionLinker exporter, IEnumerable<T> source)
+            where T : ProjectElement
+        {
+            if (source == null) return null;
+            // Just copy ...
+            List<MockProjectElementLinkRemoter> result = new List<MockProjectElementLinkRemoter>();
+            foreach (var s in source)
+            {
+                var sRemoter = exporter.ExportElement(s);
+                result.Add(sRemoter);
+            }
+            return result;
+        }
+
+        public static IList<RMock> ExportCollection<T, RMock>(this ProjectCollectionLinker exporter, IEnumerable<T> source)
             where T : class
             where RMock : MockLinkRemoter<T>, new()
         {
@@ -41,6 +82,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
             return result;
         }
+
 
         public static IDictionary<key, T> ImportDictionary<key, T, RMock>(this ProjectCollectionLinker importer, IDictionary<key, RMock> source)
             where T : class

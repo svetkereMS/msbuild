@@ -16,10 +16,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal class MockProjectPropertyLinkRemoter : MockLinkRemoter<ProjectProperty>
     {
-        public MockProjectPropertyLinkRemoter()
-        {
-        }
-
         public override ProjectProperty CreateLinkedObject(ProjectCollectionLinker remote)
         {
             var link = new MockProjectPropertyLink(this, remote);
@@ -31,7 +27,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public MockProjectLinkRemoter Project => this.OwningCollection.Export<Project, MockProjectLinkRemoter>(this.Source.Project);
         public MockProjectRootElementLinkRemoter Xml => (MockProjectRootElementLinkRemoter)this.ExportElement(this.Source.Xml);
         public string Name => this.Source.Name;
-        public string EvaluatedIncludeEscaped => this.OwningCollection.LinkFactory.GetEvaluatedValueEscaped(this.Source);
+        public string EvaluatedIncludeEscaped => ProjectPropertyLink.GetEvaluatedValueEscaped(this.Source);
         public string UnevaluatedValue { get => this.Source.UnevaluatedValue; set=> this.Source.UnevaluatedValue = value; }
         public bool IsEnvironmentProperty => this.Source.IsEnvironmentProperty;
         public bool IsGlobalProperty => this.Source.IsGlobalProperty;

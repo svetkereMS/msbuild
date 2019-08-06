@@ -1838,6 +1838,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract object Parent { get; }
         public abstract Microsoft.Build.Evaluation.ProjectMetadata Predecessor { get; }
         public abstract Microsoft.Build.Construction.ProjectMetadataElement Xml { get; }
+        public static string GetEvaluatedValueEscaped(Microsoft.Build.Evaluation.ProjectMetadata metadata) { throw null; }
         public static object GetParent(Microsoft.Build.Evaluation.ProjectMetadata metadata) { throw null; }
     }
     public abstract partial class ProjectOnErrorElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementLink
@@ -1875,6 +1876,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract Microsoft.Build.Evaluation.Project Project { get; }
         public abstract string UnevaluatedValue { get; set; }
         public abstract Microsoft.Build.Construction.ProjectPropertyElement Xml { get; }
+        public static string GetEvaluatedValueEscaped(Microsoft.Build.Evaluation.ProjectProperty property) { throw null; }
     }
     public abstract partial class ProjectRootElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {

@@ -42,5 +42,12 @@ namespace Microsoft.Build.ObjectModelRemoting
         {
             return metadata?.Parent;
         }
+
+        /// <summary>
+        /// Helper utility for External projects provider implementation to get access of the EvaluatedValueEscaped
+        public static string GetEvaluatedValueEscaped(ProjectMetadata metadata)
+        {
+            return metadata.EvaluatedValueEscaped;
+        }
     }
 }
