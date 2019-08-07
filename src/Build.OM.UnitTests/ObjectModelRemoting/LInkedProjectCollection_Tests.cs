@@ -15,24 +15,16 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     public class LinkedProjectCollection_Tests : IDisposable
     {
         private TestCollectionGroup StdGroup { get; }
-        private int StdProjectsCount { get; }
-        private string[] StdProjectFiles { get; }
-
         public LinkedProjectCollection_Tests(ITestOutputHelper output)
         {
-            this.StdProjectsCount = 4;
-            this.StdGroup = new TestCollectionGroup(2);
-            this.StdProjectFiles = new string[this.StdProjectsCount];
-            for (int i = 0; i < this.StdProjectsCount; i++)
-            {
-                this.StdProjectFiles[i] = this.StdGroup.Disk.WriteProjectFile($"Proj{i+1}.proj", TestCollectionGroup.SampleProjectFile);
-            }
+
+            this.StdGroup = new TestCollectionGroup(2, 4);
         }
 
         private void ResetBeforeTest()
         {
             // we do not modify "disk" for collection tests.
-            this.StdGroup.Clear(false);
+            this.StdGroup.Clear();
         }
 
         [Fact]
@@ -43,8 +35,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var pcLocal = this.StdGroup.Local;
             var pcRemote = this.StdGroup.Remote[0];
 
-            var proj1Path = this.StdProjectFiles[0];
-            var proj2Path = this.StdProjectFiles[1]; ;
+            var proj1Path = this.StdGroup.StdProjectFiles[0];
+            var proj2Path = this.StdGroup.StdProjectFiles[1]; ;
 
             var proj1 = pcLocal.LoadProject(proj1Path);
             var proj2 = pcRemote.LoadProject(proj2Path);
@@ -83,10 +75,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var pcRemote0 = this.StdGroup.Remote[0];
             var pcRemote1 = this.StdGroup.Remote[1];
 
-            var proj0Path = this.StdProjectFiles[0];
-            var proj1Path = this.StdProjectFiles[1];
-            var proj2Path = this.StdProjectFiles[2];
-            var proj3Path = this.StdProjectFiles[3];
+            var proj0Path = this.StdGroup.StdProjectFiles[0];
+            var proj1Path = this.StdGroup.StdProjectFiles[1];
+            var proj2Path = this.StdGroup.StdProjectFiles[2];
+            var proj3Path = this.StdGroup.StdProjectFiles[3];
 
             var proj0local = pcLocal.LoadProject(proj0Path);
             var proj1local = pcLocal.LoadProject(proj1Path);
@@ -143,9 +135,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var pcRemote = this.StdGroup.Remote[0];
             pcLocal.Importing = true;
 
-            var proj0Path = this.StdProjectFiles[0];
-            var proj1Path = this.StdProjectFiles[1];
-            var proj2Path = this.StdProjectFiles[2];
+            var proj0Path = this.StdGroup.StdProjectFiles[0];
+            var proj1Path = this.StdGroup.StdProjectFiles[1];
+            var proj2Path = this.StdGroup.StdProjectFiles[2];
 
             Assert.Equal(0, pcLocal.Collection.LoadedProjects.Count);
             Assert.Equal(0, pcRemote.Collection.LoadedProjects.Count);
@@ -168,7 +160,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(1, pcLocal.Collection.GetLoadedProjects(proj2Path).Count);
         }
 
-
         [Fact]
         public void CrossLinked()
         {
@@ -181,55 +172,55 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(0, this.StdGroup.Remote[0].Collection.LoadedProjects.Count);
             Assert.Equal(0, this.StdGroup.Remote[1].Collection.LoadedProjects.Count);
 
-            this.StdGroup.Local.LoadProject(this.StdProjectFiles[0]);
+            this.StdGroup.Local.LoadProject(this.StdGroup.StdProjectFiles[0]);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Local.Collection.LoadedProjects, 1, 0);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[0].Collection.LoadedProjects, 0, 1);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[1].Collection.LoadedProjects, 0, 1);
-            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdProjectFiles[0], 1, 0);
-            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdProjectFiles[0], 0, 1);
-            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdProjectFiles[0], 0, 1);
+            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 1, 0);
+            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 0, 1);
+            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 0, 1);
 
-            this.StdGroup.Local.LoadProject(this.StdProjectFiles[1]);
+            this.StdGroup.Local.LoadProject(this.StdGroup.StdProjectFiles[1]);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Local.Collection.LoadedProjects, 2, 0);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[0].Collection.LoadedProjects, 0, 2);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[1].Collection.LoadedProjects, 0, 2);
-            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdProjectFiles[1], 1, 0);
-            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdProjectFiles[1], 0, 1);
-            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdProjectFiles[1], 0, 1);
+            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[1], 1, 0);
+            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[1], 0, 1);
+            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[1], 0, 1);
 
-            this.StdGroup.Remote[0].LoadProject(this.StdProjectFiles[2]);
+            this.StdGroup.Remote[0].LoadProject(this.StdGroup.StdProjectFiles[2]);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Local.Collection.LoadedProjects, 2, 1);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[0].Collection.LoadedProjects, 1, 2);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[1].Collection.LoadedProjects, 0, 3);
-            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdProjectFiles[2], 0, 1);
-            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdProjectFiles[2], 1, 0);
-            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdProjectFiles[2], 0, 1);
+            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 0, 1);
+            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 1, 0);
+            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 0, 1);
 
             // load proj0 in remote[1] (already loaded in local)
-            this.StdGroup.Remote[1].LoadProject(this.StdProjectFiles[0]);
+            this.StdGroup.Remote[1].LoadProject(this.StdGroup.StdProjectFiles[0]);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Local.Collection.LoadedProjects, 2, 2);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[0].Collection.LoadedProjects, 1, 3);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[1].Collection.LoadedProjects, 1, 3);
-            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdProjectFiles[0], 1, 1);
-            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdProjectFiles[0], 0, 2);
-            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdProjectFiles[0], 1, 1);
+            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 1, 1);
+            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 0, 2);
+            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 1, 1);
 
             this.StdGroup.Local.Collection.UnloadAllProjects();
 
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Local.Collection.LoadedProjects, 0, 2);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[0].Collection.LoadedProjects, 1, 1);
             LinkedObjectsValidation.VerifyProjectCollectionLinks(this.StdGroup.Remote[1].Collection.LoadedProjects, 1, 1);
-            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdProjectFiles[0], 0, 1);
-            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdProjectFiles[0], 0, 1);
-            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdProjectFiles[0], 1, 0);
+            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 0, 1);
+            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 0, 1);
+            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[0], 1, 0);
 
-            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdProjectFiles[1], 0, 0);
-            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdProjectFiles[1], 0, 0);
-            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdProjectFiles[1], 0, 0);
+            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[1], 0, 0);
+            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[1], 0, 0);
+            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[1], 0, 0);
 
-            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdProjectFiles[2], 0, 1);
-            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdProjectFiles[2], 1, 0);
-            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdProjectFiles[2], 0, 1);
+            this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 0, 1);
+            this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 1, 0);
+            this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 0, 1);
         }
 
         public void Dispose()

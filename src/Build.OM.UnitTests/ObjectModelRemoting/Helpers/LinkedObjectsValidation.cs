@@ -107,7 +107,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(realValue, viewValue);
         }
 
-        public static void VerifyProjectElementView(ProjectElement viewXml, ProjectElement realXml)
+
+        private static void VerifyProjectElementViewInternal(ProjectElement viewXml, ProjectElement realXml)
         {
             if (viewXml == null && realXml == null) return;
 
@@ -141,6 +142,20 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             VerifyLinked(viewXml.Parent);
         }
 
+        public static void VerifyProjectElementView(ProjectElement viewXml, ProjectElement realXml, bool recursive)
+        {
+            if (viewXml is ProjectElementContainer viewContainer)
+            {
+                Assert.True(realXml is ProjectElementContainer);
+                VerifyProjectElementContainerView(viewContainer, (ProjectElementContainer)realXml, recursive);
+            }
+            else
+            {
+                Assert.False(realXml is ProjectElementContainer);
+                VerifyProjectElementViewInternal(viewXml, realXml);
+            }
+        }
+
 
         /*
         public abstract class ProjectElementContainer : ProjectElement
@@ -161,10 +176,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
         */
 
-        public static void VerifyProjectElementContainerView(ProjectElementContainer viewXml, ProjectElementContainer realXml, bool recursive = false)
+        public static void VerifyProjectElementContainerView(ProjectElementContainer viewXml, ProjectElementContainer realXml, bool recursive)
         {
             if (viewXml == null && realXml == null) return;
-            VerifyProjectElementView(viewXml, realXml);
+            VerifyProjectElementViewInternal(viewXml, realXml);
 
             Assert.Equal(realXml.Count, viewXml.Count);
 
@@ -182,17 +197,19 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 while (realChild != null )
                 {
                     Assert.NotNull(viewChild);
+                    Assert.Same(realChild.Parent, realXml);
+                    Assert.Same(viewChild.Parent, viewXml);
 
-                    if (realChild is ProjectElementContainer)
+                    if (realChild is ProjectElementContainer realChildContainer)
                     {
                         Assert.True(viewChild is ProjectElementContainer);
 
-                        VerifyProjectElementContainerView((ProjectElementContainer)viewChild, (ProjectElementContainer)realChild, true);
+                        VerifyProjectElementContainerView((ProjectElementContainer)viewChild, realChildContainer, true);
                     }
                     else
                     {
                         Assert.False(viewChild is ProjectElementContainer);
-                        VerifyProjectElementView(viewChild, realChild);
+                        VerifyProjectElementViewInternal(viewChild, realChild);
                     }
 
                     realChild = realChild.NextSibling;

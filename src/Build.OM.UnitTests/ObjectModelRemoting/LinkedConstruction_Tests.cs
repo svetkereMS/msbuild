@@ -11,39 +11,134 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using Xunit;
     using Xunit.Abstractions;
 
-    public class LinkedConstruction_Tests
+    public class LinkedConstruction_Tests : IDisposable
     {
+        private class MyTestCollectionGroup : TestCollectionGroup
+        {
+            public string BigFile { get;}
+
+            public MyTestCollectionGroup()
+                : base (2, 4)
+            {
+                this.BigFile = this.ImmutableDisk.WriteProjectFile($"Big.proj", TestCollectionGroup.BigProjectFile);
+            }
+        }
+
+        private MyTestCollectionGroup StdGroup { get; }
+
+        public LinkedConstruction_Tests(ITestOutputHelper output)
+        {
+            this.StdGroup = new MyTestCollectionGroup();
+        }
+
+        private void ResetBeforeTest()
+        {
+            // we do not modify "disk" for collection tests.
+            this.StdGroup.Clear();
+        }
 
         [Fact]
-        public void ProjectRootElemetBasic()
+        public void ProjectRootElemetMatch()
         {
-            var group = ProjectCollectionLinker.CreateGroup();
-            var pcLocal = group.AddNew();
-            var pcRemote = group.AddNew();
+            ResetBeforeTest();
+            var pcLocal = this.StdGroup.Local;
+            var pcRemote = this.StdGroup.Remote[0];
             pcLocal.Importing = true;
 
-            using (var disk = new TransientIO())
-            {
-                var proj1Path = disk.WriteProjectFile("Proj1.proj", TestCollectionGroup.SampleProjectFile);
-                var proj1Real = pcRemote.LoadProject(proj1Path);
+            var projPath = this.StdGroup.BigFile;
+            var projReal = pcRemote.LoadProject(projPath);
 
-                var proj1View = pcLocal.GetLoadedProjects(proj1Path).FirstOrDefault();
-                Assert.NotNull(proj1View);
+            var projView = pcLocal.GetLoadedProjects(projPath).FirstOrDefault();
+            Assert.NotNull(projView);
 
-                var preReal = proj1Real.Xml;
-                var preView = proj1View.Xml;
+            var preReal = projReal.Xml;
+            var preView = projView.Xml;
 
-                Assert.NotNull(preView);
-                LinkedObjectsValidation.VerifyProjectElementContainerView(preView, preReal, true);
+            Assert.NotNull(preView);
+            LinkedObjectsValidation.VerifyProjectElementContainerView(preView, preReal, true);
 
 
-                Assert.Equal(preView.FullPath, preReal.FullPath);
-                Assert.Equal(preView.DirectoryPath, preReal.DirectoryPath);
-                Assert.Equal(preView.RawXml, preReal.RawXml);
+            Assert.Equal(preView.FullPath, preReal.FullPath);
+            Assert.Equal(preView.DirectoryPath, preReal.DirectoryPath);
+            Assert.Equal(preView.RawXml, preReal.RawXml);
 
-                Assert.Equal(preView.Sdk, preReal.Sdk);
-                Assert.Equal(preView.Sdk, preReal.Sdk);
-            }
+            Assert.Equal(preView.Sdk, preReal.Sdk);
+            Assert.Equal(preView.Sdk, preReal.Sdk);
+        }
+
+
+        [Fact]
+        public void ProjectChooseElemet()
+        {
+            ResetBeforeTest();
+            var pcLocal = this.StdGroup.Local;
+            var pcRemote = this.StdGroup.Remote[0];
+            pcLocal.Importing = true;
+
+            var projPath = this.StdGroup.BigFile;
+            var projReal = pcRemote.LoadProject(projPath);
+
+            var projView = pcLocal.GetLoadedProjects(projPath).FirstOrDefault();
+            Assert.NotNull(projView);
+
+            var preReal = projReal.Xml;
+            var preView = projView.Xml;
+            Assert.NotNull(preReal);
+            Assert.NotNull(preView);
+
+            Assert.Single(preReal.ChooseElements);
+            Assert.Single(preView.ChooseElements);
+
+            var realChoose = preReal.ChooseElements.FirstOrDefault();
+            var viewChoose = preView.ChooseElements.FirstOrDefault();
+
+            LinkedObjectsValidation.VerifyProjectElementView(viewChoose, realChoose, true);
+        }
+
+        [Fact]
+        public void ProjectExtensionsElement()
+        {
+            ResetBeforeTest();
+            var pcLocal = this.StdGroup.Local;
+            var pcRemote = this.StdGroup.Remote[0];
+            pcLocal.Importing = true;
+
+            var projPath = this.StdGroup.BigFile;
+            var projReal = pcRemote.LoadProject(projPath);
+
+            var projView = pcLocal.GetLoadedProjects(projPath).FirstOrDefault();
+            Assert.NotNull(projView);
+
+            var preReal = projReal.Xml;
+            var preView = projView.Xml;
+            Assert.NotNull(preReal);
+            Assert.NotNull(preView);
+
+            var realExtensionsList = preReal.ChildrenReversed.OfType<ProjectExtensionsElement>().ToList();
+            var viewExtensionsList = preView.ChildrenReversed.OfType<ProjectExtensionsElement>().ToList();
+
+            Assert.Single(realExtensionsList);
+            Assert.Single(viewExtensionsList);
+            var realExtension = realExtensionsList.FirstOrDefault();
+            var viewExtension = viewExtensionsList.FirstOrDefault();
+            LinkedObjectsValidation.VerifyProjectElementView(viewExtension, realExtension, true);
+            Assert.Equal(realExtension.Content, viewExtension.Content);
+
+            Assert.Equal(realExtension["a"], viewExtension["a"]);
+            Assert.Equal(realExtension["b"], viewExtension["b"]);
+            Assert.Equal("x", viewExtension["a"]);
+            Assert.Equal("y", viewExtension["b"]);
+        }
+
+
+
+
+
+
+
+        public void Dispose()
+        {
+            this.StdGroup.Dispose();
         }
     }
 }
