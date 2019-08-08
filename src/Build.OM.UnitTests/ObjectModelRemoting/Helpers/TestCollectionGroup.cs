@@ -59,10 +59,30 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                             <i Condition=""'$(Configuration)'=='Foo'"" Include='i0'/>
                             <i Include='i1'/>
                             <i Include='$(p)X;i3'/>
-                            <i2 Include='item2'/>
+                            <i2 Include='item2' KeepDuplicates=""false"" KeepMetadata=""CopyToOutputDirectory;TargetPath"" RemoveMetadata=""xx""/>
+                            <i2 Remove='item2'/>
+                            <i2 Update='item2'/>
                         </ItemGroup>
 
-                        <ItemDefinitionGroup>
+                        <ItemGroup>
+                            <src Condition=""'$(Configuration)'=='Foo'"" Include='foo.cs'/>
+                            <src Include='foo2.cs'/>
+                            <i4 Include='i' Exclude='j' m2='v2' />
+                        </ItemGroup>
+
+                        <ItemGroup>
+                            <Compile Include=""Constants.cs"">
+                                <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+                            </Compile>
+                            <Compile Include=""EncodingStringWriter.cs"">
+                                <Link>EncodingStringWriter.cs</Link>
+                            </Compile>
+                            <Compile Include=""EncodingUtilities.cs"">
+                                 <Link>EncodingUtilities.cs</Link>
+                            </Compile>
+                        </ItemGroup>
+
+                        <ItemDefinitionGroup >
                             <i2 m1='v1'>
                                 <m2 Condition='true'>v2</m2>
                                 <m1>v3</m1>
