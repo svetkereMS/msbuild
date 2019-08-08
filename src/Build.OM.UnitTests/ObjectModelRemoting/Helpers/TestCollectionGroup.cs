@@ -7,7 +7,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
 
-    internal class TestCollectionGroup : IDisposable
+    public class TestCollectionGroup : IDisposable
     {
         public static string SampleProjectFile = ObjectModelHelpers.CleanupFileContents(@"
                     <Project xmlns='msbuildnamespace' ToolsVersion='2.0' InitialTargets='it' DefaultTargets='dt'>
@@ -33,6 +33,19 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public static string BigProjectFile = ObjectModelHelpers.CleanupFileContents(@"
                     <Project xmlns='msbuildnamespace' ToolsVersion='2.0' InitialTargets='it' DefaultTargets='dt'>
+                        <Import Project='pi1.proj' />
+                        <Import Project='pi2.proj' Condition=""'$(Configuration)'=='Foo'""/>
+                        <Import Project='pi3.proj' Condition='false' Sdk=""FakeSdk"" Version=""1.0"" MinimumVersion=""1.0""/>
+
+                        <ImportGroup>
+                            <Import Project='a.proj' />
+                            <Import Project='b.proj' />
+                        </ImportGroup>
+                        <ImportGroup Condition='false'>
+                            <Import Project='c.proj' />
+                        </ImportGroup>
+
+
                         <PropertyGroup Condition=""'$(Configuration)'=='Foo'"">
                             <p>v1</p>
                         </PropertyGroup>
@@ -46,7 +59,22 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                             <i Condition=""'$(Configuration)'=='Foo'"" Include='i0'/>
                             <i Include='i1'/>
                             <i Include='$(p)X;i3'/>
+                            <i2 Include='item2'/>
                         </ItemGroup>
+
+                        <ItemDefinitionGroup>
+                            <i2 m1='v1'>
+                                <m2 Condition='true'>v2</m2>
+                                <m1>v3</m1>
+                            </i2>
+                        </ItemDefinitionGroup>
+
+                        <ItemDefinitionGroup>
+                            <i3 m1='v1'>
+                                <m1>v3</m1>
+                            </i3>
+                            <i4 />
+                        </ItemDefinitionGroup>
 
                         <Choose>
                             <When Condition=""'$(Configuration)'=='Foo'"">
@@ -85,11 +113,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public int RemoteCount { get; }
 
-        public ProjectCollectionLinker.ConnectedProjectCollections Group { get; }
-        public ProjectCollectionLinker Local { get; }
+        internal ProjectCollectionLinker.ConnectedProjectCollections Group { get; }
+        internal ProjectCollectionLinker Local { get; }
 
-        public ProjectCollectionLinker[] Remote { get; } = new ProjectCollectionLinker[2];
-        public TransientIO Disk { get; }
+        internal ProjectCollectionLinker[] Remote { get; } = new ProjectCollectionLinker[2];
+        internal TransientIO Disk { get; }
         protected TransientIO ImmutableDisk { get; }
         public IReadOnlyList<string> StdProjectFiles { get; }
 

@@ -1885,6 +1885,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract string DirectoryPath { get; }
         public abstract System.Text.Encoding Encoding { get; }
         public abstract string FullPath { get; set; }
+        public abstract bool HasUnsavedChanges { get; }
         public abstract System.DateTime LastWriteTimeWhenRead { get; }
         public abstract bool PreserveFormatting { get; }
         public abstract Microsoft.Build.Construction.ElementLocation ProjectFileLocation { get; }

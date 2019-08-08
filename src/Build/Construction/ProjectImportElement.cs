@@ -89,7 +89,7 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string Version
         {
-            get => ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.sdkVersion);
+            get => GetAttributeValue(XMakeAttributes.sdkVersion);
             set
             {
                 if (!CheckUpdatedSdk()) return;
@@ -102,7 +102,7 @@ namespace Microsoft.Build.Construction
         /// </summary>
         public string MinimumVersion
         {
-            get => ProjectXmlUtilities.GetAttributeValue(XmlElement, XMakeAttributes.sdkMinimumVersion);
+            get => GetAttributeValue(XMakeAttributes.sdkMinimumVersion);
             set
             {
                 if (!CheckUpdatedSdk()) return;

@@ -53,6 +53,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             ElementInfo.New<ProjectChooseElement             , MockProjectChooseElementLinkRemoter>(),
             ElementInfo.New<ProjectExtensionsElement         , MockProjectExtensionsElementLinkRemoter>(),
             ElementInfo.New<ProjectImportElement             , MockProjectImportElementLinkRemoter>(),
+            ElementInfo.New<ProjectImportGroupElement        , MockProjectImportGroupElementLinkRemoter>(),
             ElementInfo.New<ProjectItemDefinitionGroupElement, MockProjectItemDefinitionGroupElementLinkRemoter>(),
             ElementInfo.New<ProjectItemElement               , MockProjectItemElementLinkRemoter>(),
             ElementInfo.New<ProjectItemGroupElement          , MockProjectItemGroupElementLinkRemoter>(),

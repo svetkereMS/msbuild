@@ -8,7 +8,7 @@ namespace Microsoft.Build.UnitTests
     using System.IO;
     using Microsoft.Build.Shared;
 
-    internal class TransientIO : IDisposable
+    public class TransientIO : IDisposable
     {
         private DirectoryInfo root;
         private TransientIO Parent { get; }

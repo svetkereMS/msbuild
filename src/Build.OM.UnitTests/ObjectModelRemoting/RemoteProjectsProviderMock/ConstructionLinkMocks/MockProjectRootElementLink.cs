@@ -28,6 +28,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         // ProjectRootElementLink remoting
         public int Version => this.ProjectXml.Version;
+        public bool HasUnsavedChanges => this.ProjectXml.HasUnsavedChanges;
         public DateTime TimeLastChanged => this.ProjectXml.TimeLastChanged;
         public DateTime LastWriteTimeWhenRead => this.ProjectXml.LastWriteTimeWhenRead;
         public string DirectoryPath => this.ProjectXml.DirectoryPath;
@@ -188,6 +189,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         // ProjectRootElementLink remoting
         public override int Version => Proxy.Version;
+        public override bool HasUnsavedChanges => Proxy.HasUnsavedChanges;
         public override DateTime TimeLastChanged => Proxy.TimeLastChanged;
         public override DateTime LastWriteTimeWhenRead => Proxy.LastWriteTimeWhenRead;
         public override string DirectoryPath => Proxy.DirectoryPath;

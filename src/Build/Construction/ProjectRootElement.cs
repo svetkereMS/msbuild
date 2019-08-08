@@ -567,7 +567,7 @@ namespace Microsoft.Build.Construction
         /// <summary>
         /// Whether the XML has been modified since it was last loaded or saved.
         /// </summary>
-        public bool HasUnsavedChanges => Version != _versionOnDisk;
+        public bool HasUnsavedChanges => Link != null ? RootLink.HasUnsavedChanges : Version != _versionOnDisk;
 
         /// <summary>
         /// Whether the XML is preserving formatting or not.

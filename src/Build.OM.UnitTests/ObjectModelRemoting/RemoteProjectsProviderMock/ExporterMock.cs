@@ -148,6 +148,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
 
         public Project LoadProject(string path) =>  this.Collection.LoadProject(path);
+        public Project LoadProjectIgnoreMissingImports(string path) => LoadProjectWithSettings(path, ProjectLoadSettings.IgnoreMissingImports);
+        public Project LoadProjectWithSettings(string path, ProjectLoadSettings settings) => new Project(path, null, null, this.Collection, settings);
 
         public ConnectedProjectCollections LinkedCollections { get; }
 

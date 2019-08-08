@@ -12,26 +12,24 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using Xunit;
     using Xunit.Abstractions;
 
-    public class LinkedProjectCollection_Tests : IDisposable
+    public class LinkedProjectCollection_Tests : IClassFixture<LinkedProjectCollection_Tests.MyTestCollectionGroup>
     {
-        private TestCollectionGroup StdGroup { get; }
-        public LinkedProjectCollection_Tests(ITestOutputHelper output)
+        public class MyTestCollectionGroup : TestCollectionGroup
         {
-
-            this.StdGroup = new TestCollectionGroup(2, 4);
+            public MyTestCollectionGroup() : base(2, 4) { }
         }
 
-        private void ResetBeforeTest()
+        public TestCollectionGroup StdGroup { get; }
+        public LinkedProjectCollection_Tests(MyTestCollectionGroup group)
         {
-            // we do not modify "disk" for collection tests.
-            this.StdGroup.Clear();
+
+            this.StdGroup = group;
+            group.Clear();
         }
 
         [Fact]
         public void EnumerationBasic()
         {
-            ResetBeforeTest();
-
             var pcLocal = this.StdGroup.Local;
             var pcRemote = this.StdGroup.Remote[0];
 
@@ -69,8 +67,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         [Fact]
         public void EnumerationMultiple()
         {
-            ResetBeforeTest();
-
             var pcLocal = this.StdGroup.Local;
             var pcRemote0 = this.StdGroup.Remote[0];
             var pcRemote1 = this.StdGroup.Remote[1];
@@ -129,8 +125,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         [Fact]
         public void DynamicEnumeration()
         {
-            ResetBeforeTest();
-
             var pcLocal = this.StdGroup.Local;
             var pcRemote = this.StdGroup.Remote[0];
             pcLocal.Importing = true;
@@ -163,8 +157,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         [Fact]
         public void CrossLinked()
         {
-            ResetBeforeTest();
-
             this.StdGroup.Local.Importing = true;
             Array.ForEach(StdGroup.Remote, (r) => r.Importing = true);
 
@@ -221,11 +213,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             this.StdGroup.Local.VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 0, 1);
             this.StdGroup.Remote[0].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 1, 0);
             this.StdGroup.Remote[1].VerifyProjectCollectionLinks(this.StdGroup.StdProjectFiles[2], 0, 1);
-        }
-
-        public void Dispose()
-        {
-            this.StdGroup.Dispose();
         }
     }
 }

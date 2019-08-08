@@ -21,6 +21,11 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract int Version { get; }
 
         /// <summary>
+        /// Access to remote <see cref="ProjectRootElement.HasUnsavedChanges"/>.
+        /// </summary>
+        public abstract bool HasUnsavedChanges { get; }
+
+        /// <summary>
         /// Access to remote <see cref="ProjectRootElement.TimeLastChanged"/>.
         /// </summary>
         public abstract DateTime TimeLastChanged { get; }
