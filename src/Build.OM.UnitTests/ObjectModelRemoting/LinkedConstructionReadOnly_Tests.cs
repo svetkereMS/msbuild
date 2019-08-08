@@ -384,7 +384,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
         }
 
-        /**/
         [Fact]
         public void ProjectProjectWhenElementReadOnly()
         {
@@ -424,7 +423,43 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 LinkedObjectsValidation.VerifyProjectElementView(viewElement, realElement, true);
             }
         }
-        /**/
+
+        [Fact]
+        public void ProjectTargetElementReadOnly()
+        {
+            var preReal = this.StdGroup.RealXml;
+            var preView = this.StdGroup.ViewXml;
+
+            var realCollection = preReal.Targets.ToList();
+            var viewCollection = preView.Targets.ToList();
+
+            Assert.NotEmpty(realCollection);
+            Assert.Equal(realCollection.Count, viewCollection.Count);
+
+            for (int i = 0; i < realCollection.Count; i++)
+            {
+                var viewTarget = viewCollection[i];
+                var realTarget = realCollection[i];
+                LinkedObjectsValidation.VerifyProjectElementView(viewTarget, realTarget, true);
+
+                Assert.Equal(realTarget.Name, viewTarget.Name);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.NameLocation, viewTarget.NameLocation);
+                Assert.Equal(realTarget.Inputs, viewTarget.Inputs);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.InputsLocation, viewTarget.InputsLocation);
+                Assert.Equal(realTarget.Outputs, viewTarget.Outputs);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.OutputsLocation, viewTarget.OutputsLocation);
+                Assert.Equal(realTarget.KeepDuplicateOutputs, viewTarget.KeepDuplicateOutputs);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.KeepDuplicateOutputsLocation, viewTarget.KeepDuplicateOutputsLocation);
+                Assert.Equal(realTarget.DependsOnTargets, viewTarget.DependsOnTargets);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.DependsOnTargetsLocation, viewTarget.DependsOnTargetsLocation);
+                Assert.Equal(realTarget.BeforeTargets, viewTarget.BeforeTargets);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.BeforeTargetsLocation, viewTarget.BeforeTargetsLocation);
+                Assert.Equal(realTarget.AfterTargets, viewTarget.AfterTargets);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.AfterTargetsLocation, viewTarget.AfterTargetsLocation);
+                Assert.Equal(realTarget.Returns, viewTarget.Returns);
+                LinkedObjectsValidation.VerifySameLocation(realTarget.ReturnsLocation, viewTarget.ReturnsLocation);
+            }
+        }
         ProjectTargetElement x7;
         ProjectTaskElement x8;
 
