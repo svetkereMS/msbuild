@@ -8,6 +8,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Xml.Schema;
     using Microsoft.Build.Construction;
     using Microsoft.Build.Evaluation;
     using Xunit;
@@ -41,8 +42,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.NotNull(projView);
                 this.ViewXml = projView.Xml;
 
-                LinkedObjectsValidation.VerifyNotLinkedNotNull(this.RealXml);
-                LinkedObjectsValidation.VerifyLinkedNotNull(this.ViewXml);
+                ViewValidation.VerifyNotLinkedNotNull(this.RealXml);
+                ViewValidation.VerifyLinkedNotNull(this.ViewXml);
             }
 
             public void ResetBeforeTests()
@@ -54,11 +55,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.NotSame(projView, this.ViewXml);
                 this.ViewXml = projView.Xml;
 
-                LinkedObjectsValidation.VerifyLinkedNotNull(this.ViewXml);
+                ViewValidation.VerifyLinkedNotNull(this.ViewXml);
             }
         }
 
-        private static ROTestCollectionGroup xx = new ROTestCollectionGroup();
         private ROTestCollectionGroup StdGroup { get; }
 
         public LinkedConstructionReadOnly_Tests(ROTestCollectionGroup group)
@@ -69,35 +69,13 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
 
 
-        // will be validated via ItemDefinition and Item tests. To much work to create a standalone UT.
-        private void ValidateMetadataReadOnly(ProjectMetadataElement viewXml, ProjectMetadataElement realXml)
-        {
-            LinkedObjectsValidation.VerifyProjectElementView(viewXml, realXml, true);
-
-            Assert.Equal(realXml.Name, viewXml.Name);
-            Assert.Equal(realXml.Value, viewXml.Value);
-            Assert.Equal(realXml.ExpressedAsAttribute, viewXml.ExpressedAsAttribute);
-        }
-
-        private void ValidateMetadataCollectionReadOnly(IEnumerable<ProjectMetadataElement> viewXmlCollection, IEnumerable<ProjectMetadataElement> realXmlCollection)
-        {
-            var viewXmlList = viewXmlCollection.ToList();
-            var realXmlList = realXmlCollection.ToList();
-            Assert.Equal(realXmlList.Count, viewXmlList.Count);
-            for (int i= 0; i< realXmlList.Count; i++)
-            {
-                ValidateMetadataReadOnly(viewXmlList[i], realXmlList[i]);
-            }
-        }
-
-
         [Fact]
         public void ProjectRootElemetReadOnly()
         {
             var preReal = this.StdGroup.RealXml;
             var preView = this.StdGroup.ViewXml;
 
-            LinkedObjectsValidation.VerifyProjectElementContainerView(preView, preReal, true);
+            ViewValidation.VerifyProjectElementContainerView(preView, preReal, true);
 
             Assert.Equal(preReal.FullPath, preView.FullPath);
             Assert.Equal(preReal.DirectoryPath, preView.DirectoryPath);
@@ -113,12 +91,12 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(preReal.TimeLastChanged, preView.TimeLastChanged);
             Assert.Equal(preReal.LastWriteTimeWhenRead, preView.LastWriteTimeWhenRead);
 
-            LinkedObjectsValidation.VerifySameLocation(preReal.ProjectFileLocation, preView.ProjectFileLocation);
-            LinkedObjectsValidation.VerifySameLocation(preReal.ToolsVersionLocation, preView.ToolsVersionLocation);
-            LinkedObjectsValidation.VerifySameLocation(preReal.DefaultTargetsLocation, preView.DefaultTargetsLocation);
-            LinkedObjectsValidation.VerifySameLocation(preReal.InitialTargetsLocation, preView.InitialTargetsLocation);
-            LinkedObjectsValidation.VerifySameLocation(preReal.SdkLocation, preView.SdkLocation);
-            LinkedObjectsValidation.VerifySameLocation(preReal.TreatAsLocalPropertyLocation, preView.TreatAsLocalPropertyLocation);
+            ViewValidation.VerifySameLocation(preReal.ProjectFileLocation, preView.ProjectFileLocation);
+            ViewValidation.VerifySameLocation(preReal.ToolsVersionLocation, preView.ToolsVersionLocation);
+            ViewValidation.VerifySameLocation(preReal.DefaultTargetsLocation, preView.DefaultTargetsLocation);
+            ViewValidation.VerifySameLocation(preReal.InitialTargetsLocation, preView.InitialTargetsLocation);
+            ViewValidation.VerifySameLocation(preReal.SdkLocation, preView.SdkLocation);
+            ViewValidation.VerifySameLocation(preReal.TreatAsLocalPropertyLocation, preView.TreatAsLocalPropertyLocation);
         }
         
         [Fact]
@@ -133,7 +111,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var realChoose = preReal.ChooseElements.FirstOrDefault();
             var viewChoose = preView.ChooseElements.FirstOrDefault();
 
-            LinkedObjectsValidation.VerifyProjectElementView(viewChoose, realChoose, true);
+            ViewValidation.VerifyProjectElementView(viewChoose, realChoose, true);
         }
 
         [Fact]
@@ -149,7 +127,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Single(viewExtensionsList);
             var realExtension = realExtensionsList.FirstOrDefault();
             var viewExtension = viewExtensionsList.FirstOrDefault();
-            LinkedObjectsValidation.VerifyProjectElementView(viewExtension, realExtension, true);
+            ViewValidation.VerifyProjectElementView(viewExtension, realExtension, true);
             Assert.Equal(realExtension.Content, viewExtension.Content);
 
             Assert.Equal(realExtension["a"], viewExtension["a"]);
@@ -175,19 +153,19 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewImport = viewImports[i];
                 var realImport = realImports[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewImport, realImport, true);
+                ViewValidation.VerifyProjectElementView(viewImport, realImport, true);
 
                 Assert.Equal(realImport.Project, viewImport.Project);
-                LinkedObjectsValidation.VerifySameLocation(realImport.ProjectLocation, viewImport.ProjectLocation);
+                ViewValidation.VerifySameLocation(realImport.ProjectLocation, viewImport.ProjectLocation);
 
                 // mostly test the remoting infrastructure. Sdk Imports are not really covered by simple samples for now.
                 // Todo: add mock SDK import closure to SdtGroup?
                 Assert.Equal(realImport.Sdk, viewImport.Sdk);
                 Assert.Equal(realImport.Version, viewImport.Version);
                 Assert.Equal(realImport.MinimumVersion, viewImport.MinimumVersion);
-                LinkedObjectsValidation.VerifySameLocation(realImport.SdkLocation, viewImport.SdkLocation);
+                ViewValidation.VerifySameLocation(realImport.SdkLocation, viewImport.SdkLocation);
                 Assert.Equal(realImport.ImplicitImportLocation, viewImport.ImplicitImportLocation);
-                LinkedObjectsValidation.VerifyProjectElementView(viewImport.OriginalElement, realImport.OriginalElement, true);
+                ViewValidation.VerifyProjectElementView(viewImport.OriginalElement, realImport.OriginalElement, true);
             }
         }
 
@@ -207,7 +185,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewImportGroup = viewImportGroups[i];
                 var realImportGroup = realImportGroups[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewImportGroup, realImportGroup, true);
+                ViewValidation.VerifyProjectElementView(viewImportGroup, realImportGroup, true);
 
                 Assert.Equal(realImportGroup.Imports.Count, viewImportGroup.Imports.Count);
             }
@@ -229,10 +207,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItemDef = viewlItemDefinitions[i];
                 var realItemDef = realItemDefinitions[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewItemDef, realItemDef, true);
+                ViewValidation.VerifyProjectElementView(viewItemDef, realItemDef, true);
 
                 Assert.Equal(realItemDef.ItemType, viewItemDef.ItemType);
-                ValidateMetadataCollectionReadOnly(viewItemDef.Metadata, realItemDef.Metadata);
+                ViewValidation.Verify(viewItemDef.Metadata, realItemDef.Metadata, ViewValidation.Verify);
             }
         }
 
@@ -252,7 +230,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItemDefGroup = viewlItemDefinitionGroups[i];
                 var realItemDefGroup = realItemDefinitionGroups[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewItemDefGroup, realItemDefGroup, true);
+                ViewValidation.VerifyProjectElementView(viewItemDefGroup, realItemDefGroup, true);
 
                 Assert.Equal(viewItemDefGroup.ItemDefinitions.Count, viewItemDefGroup.ItemDefinitions.Count);
             }
@@ -274,7 +252,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItem = viewlItems[i];
                 var realItem = realItems[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewItem, realItem, true);
+                ViewValidation.VerifyProjectElementView(viewItem, realItem, true);
 
                 Assert.Equal(realItem.ItemType, viewItem.ItemType);
                 Assert.Equal(realItem.Include, viewItem.Include);
@@ -285,15 +263,16 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.Equal(realItem.RemoveMetadata, viewItem.RemoveMetadata);
                 Assert.Equal(realItem.KeepDuplicates, viewItem.KeepDuplicates);
                 Assert.Equal(realItem.HasMetadata, viewItem.HasMetadata);
-                ValidateMetadataCollectionReadOnly(viewItem.Metadata, realItem.Metadata);
 
-                LinkedObjectsValidation.VerifySameLocation(realItem.IncludeLocation, viewItem.IncludeLocation);
-                LinkedObjectsValidation.VerifySameLocation(realItem.ExcludeLocation, viewItem.ExcludeLocation);
-                LinkedObjectsValidation.VerifySameLocation(realItem.RemoveLocation, viewItem.RemoveLocation);
-                LinkedObjectsValidation.VerifySameLocation(realItem.UpdateLocation, viewItem.UpdateLocation);
-                LinkedObjectsValidation.VerifySameLocation(realItem.KeepMetadataLocation, viewItem.KeepMetadataLocation);
-                LinkedObjectsValidation.VerifySameLocation(realItem.RemoveMetadataLocation, viewItem.RemoveMetadataLocation);
-                LinkedObjectsValidation.VerifySameLocation(realItem.KeepDuplicatesLocation, viewItem.KeepDuplicatesLocation);
+                ViewValidation.Verify(viewItem.Metadata, realItem.Metadata, ViewValidation.Verify);
+
+                ViewValidation.VerifySameLocation(realItem.IncludeLocation, viewItem.IncludeLocation);
+                ViewValidation.VerifySameLocation(realItem.ExcludeLocation, viewItem.ExcludeLocation);
+                ViewValidation.VerifySameLocation(realItem.RemoveLocation, viewItem.RemoveLocation);
+                ViewValidation.VerifySameLocation(realItem.UpdateLocation, viewItem.UpdateLocation);
+                ViewValidation.VerifySameLocation(realItem.KeepMetadataLocation, viewItem.KeepMetadataLocation);
+                ViewValidation.VerifySameLocation(realItem.RemoveMetadataLocation, viewItem.RemoveMetadataLocation);
+                ViewValidation.VerifySameLocation(realItem.KeepDuplicatesLocation, viewItem.KeepDuplicatesLocation);
             }
         }
 
@@ -313,7 +292,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItemGroup = viewItemGroups[i];
                 var realItemGroup = realItemGroups[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewItemGroup, realItemGroup, true);
+                ViewValidation.VerifyProjectElementView(viewItemGroup, realItemGroup, true);
 
                 Assert.Equal(viewItemGroup.Items.Count, viewItemGroup.Items.Count);
             }
@@ -335,7 +314,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewProperty = viewProperties[i];
                 var realProperty = realProperties[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewProperty, realProperty, true);
+                ViewValidation.VerifyProjectElementView(viewProperty, realProperty, true);
                 Assert.Equal(realProperty.Name, viewProperty.Name);
                 Assert.Equal(realProperty.Value, viewProperty.Value);
             }
@@ -357,7 +336,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewPropertyGroup = viewPropertieGroups[i];
                 var realPropertyGroup = realPropertieGroups[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewPropertyGroup, realPropertyGroup, true);
+                ViewValidation.VerifyProjectElementView(viewPropertyGroup, realPropertyGroup, true);
 
                 Assert.Equal(realPropertyGroup.Properties.Count, viewPropertyGroup.Properties.Count);
                 Assert.Equal(realPropertyGroup.PropertiesReversed.Count, viewPropertyGroup.PropertiesReversed.Count);
@@ -380,7 +359,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewElement = viewCollection[i];
                 var realElement = realCollection[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewElement, realElement, true);
+                ViewValidation.VerifyProjectElementView(viewElement, realElement, true);
             }
         }
 
@@ -400,7 +379,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewElement = viewCollection[i];
                 var realElement = realCollection[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewElement, realElement, true);
+                ViewValidation.VerifyProjectElementView(viewElement, realElement, true);
             }
         }
 
@@ -420,7 +399,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewElement = viewCollection[i];
                 var realElement = realCollection[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewElement, realElement, true);
+                ViewValidation.VerifyProjectElementView(viewElement, realElement, true);
             }
         }
 
@@ -440,33 +419,91 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewTarget = viewCollection[i];
                 var realTarget = realCollection[i];
-                LinkedObjectsValidation.VerifyProjectElementView(viewTarget, realTarget, true);
+                ViewValidation.VerifyProjectElementView(viewTarget, realTarget, true);
 
                 Assert.Equal(realTarget.Name, viewTarget.Name);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.NameLocation, viewTarget.NameLocation);
+                ViewValidation.VerifySameLocation(realTarget.NameLocation, viewTarget.NameLocation);
                 Assert.Equal(realTarget.Inputs, viewTarget.Inputs);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.InputsLocation, viewTarget.InputsLocation);
+                ViewValidation.VerifySameLocation(realTarget.InputsLocation, viewTarget.InputsLocation);
                 Assert.Equal(realTarget.Outputs, viewTarget.Outputs);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.OutputsLocation, viewTarget.OutputsLocation);
+                ViewValidation.VerifySameLocation(realTarget.OutputsLocation, viewTarget.OutputsLocation);
                 Assert.Equal(realTarget.KeepDuplicateOutputs, viewTarget.KeepDuplicateOutputs);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.KeepDuplicateOutputsLocation, viewTarget.KeepDuplicateOutputsLocation);
+                ViewValidation.VerifySameLocation(realTarget.KeepDuplicateOutputsLocation, viewTarget.KeepDuplicateOutputsLocation);
                 Assert.Equal(realTarget.DependsOnTargets, viewTarget.DependsOnTargets);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.DependsOnTargetsLocation, viewTarget.DependsOnTargetsLocation);
+                ViewValidation.VerifySameLocation(realTarget.DependsOnTargetsLocation, viewTarget.DependsOnTargetsLocation);
                 Assert.Equal(realTarget.BeforeTargets, viewTarget.BeforeTargets);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.BeforeTargetsLocation, viewTarget.BeforeTargetsLocation);
+                ViewValidation.VerifySameLocation(realTarget.BeforeTargetsLocation, viewTarget.BeforeTargetsLocation);
                 Assert.Equal(realTarget.AfterTargets, viewTarget.AfterTargets);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.AfterTargetsLocation, viewTarget.AfterTargetsLocation);
+                ViewValidation.VerifySameLocation(realTarget.AfterTargetsLocation, viewTarget.AfterTargetsLocation);
                 Assert.Equal(realTarget.Returns, viewTarget.Returns);
-                LinkedObjectsValidation.VerifySameLocation(realTarget.ReturnsLocation, viewTarget.ReturnsLocation);
+                ViewValidation.VerifySameLocation(realTarget.ReturnsLocation, viewTarget.ReturnsLocation);
             }
         }
-        ProjectTargetElement x7;
-        ProjectTaskElement x8;
 
-        UsingTaskParameterGroupElement x13;
+
+        [Fact]
+        public void ProjectTaskElementReadOnly()
+        {
+            var preReal = this.StdGroup.RealXml;
+            var preView = this.StdGroup.ViewXml;
+
+            var realCollection = preReal.AllChildren.OfType<ProjectTaskElement>().ToList();
+            var viewCollection = preView.AllChildren.OfType<ProjectTaskElement>().ToList();
+
+            Assert.NotEmpty(realCollection);
+            Assert.Equal(realCollection.Count, viewCollection.Count);
+
+            for (int i = 0; i < realCollection.Count; i++)
+            {
+                var viewTask = viewCollection[i];
+                var realTask = realCollection[i];
+                ViewValidation.VerifyProjectElementView(viewTask, realTask, true);
+
+                Assert.Equal(realTask.Name, viewTask.Name);
+
+                Assert.Equal(realTask.ContinueOnError, viewTask.ContinueOnError);
+                ViewValidation.VerifySameLocation(realTask.ContinueOnErrorLocation, viewTask.ContinueOnErrorLocation);
+                Assert.Equal(realTask.MSBuildRuntime, viewTask.MSBuildRuntime);
+                ViewValidation.VerifySameLocation(realTask.MSBuildRuntimeLocation, viewTask.MSBuildRuntimeLocation);
+
+                Assert.Equal(realTask.MSBuildArchitecture, viewTask.MSBuildArchitecture);
+                ViewValidation.VerifySameLocation(realTask.MSBuildArchitectureLocation, viewTask.MSBuildArchitectureLocation);
+
+                ViewValidation.Verify(viewTask.Outputs, realTask.Outputs, ViewValidation.Verify);
+            }
+        }
+
+        [Fact]
+        public void ProjectUsingTaskElementReadOnly()
+        {
+
+            var preReal = this.StdGroup.RealXml;
+            var preView = this.StdGroup.ViewXml;
+
+            var realCollection = preReal.AllChildren.OfType<ProjectUsingTaskElement>().ToList();
+            var viewCollection = preView.AllChildren.OfType<ProjectUsingTaskElement>().ToList();
+
+            Assert.NotEmpty(realCollection);
+            Assert.Equal(realCollection.Count, viewCollection.Count);
+
+            for (int i = 0; i < realCollection.Count; i++)
+            {
+                var viewUsingTask = viewCollection[i];
+                var realUsingTask = realCollection[i];
+                ViewValidation.VerifyProjectElementView(viewUsingTask, realUsingTask, true);
+
+                Assert.Equal(realUsingTask.AssemblyFile, viewUsingTask.AssemblyFile);
+                ViewValidation.VerifySameLocation(realUsingTask.AssemblyFileLocation, viewUsingTask.AssemblyFileLocation);
+            }
+        }
+
         ProjectUsingTaskElement x10;
-        ProjectUsingTaskBodyElement x9;
+
+        UsingTaskParameterGroupElement x;
+        UsingTaskParameterGroupElement x13;
         ProjectUsingTaskParameterElement x11;
+
+        ProjectUsingTaskBodyElement x9;
 
         ProjectOnErrorElement x1;
         ProjectOutputElement x3;

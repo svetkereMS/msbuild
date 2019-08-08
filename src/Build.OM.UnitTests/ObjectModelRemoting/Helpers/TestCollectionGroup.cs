@@ -37,6 +37,20 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                         <Import Project='pi2.proj' Condition=""'$(Configuration)'=='Foo'""/>
                         <Import Project='pi3.proj' Condition='false' Sdk=""FakeSdk"" Version=""1.0"" MinimumVersion=""1.0""/>
 
+                        <UsingTask TaskName='SuperTask' AssemblyFile='af' TaskFactory='AssemblyFactory'>
+                           <ParameterGroup>
+                              <MyParameter1 ParameterType='System.String' Output='true' Required='false'/>
+                              <MyParameter2 ParameterType='System.String' Output='true' Required='false'/>
+                           </ParameterGroup>
+                       </UsingTask>
+
+                        <UsingTask TaskName='LooserTask' AssemblyFile='af' TaskFactory='AssemblyFactory'>
+                           <ParameterGroup>
+                              <YourParameter1 ParameterType='System.String' Output='true' Required='false'/>
+                              <YourParameter2 ParameterType='System.String' Output='true' Required='false'/>
+                           </ParameterGroup>
+                       </UsingTask>
+
                         <ImportGroup>
                             <Import Project='a.proj' />
                             <Import Project='b.proj' />
@@ -122,6 +136,31 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                         <Target Name='t'>
                             <task/>
                         </Target>
+
+                        <Target
+                            Name=""Frankenstein""
+                            Returns=""@(_ProjectReferencesFromRAR);@(_ResolvedNativeProjectReferencePaths)""
+                            Inputs=""@(_SourceItemsToCopyToOutputDirectory)""
+                            BeforeTargets=""Compile""
+                            AfterTargets=""Link""
+                            Outputs=""@(_SourceItemsToCopyToOutputDirectory->'$(OutDir)%(TargetPath)')""
+                            KeepDuplicateOutputs="" '$(MSBuildDisableGetCopyToOutputDirectoryItemsOptimization)' == '' ""
+                            DependsOnTargets=""ResolveProjectReferences;ResolveAssemblyReferences"">
+
+                            <ItemGroup>
+                                <_ProjectReferencesFromRAR Include=""@(ReferencePath->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"">
+                                <OriginalItemSpec>%(ReferencePath.ProjectReferenceOriginalItemSpec)</OriginalItemSpec>
+                                </_ProjectReferencesFromRAR>
+                            </ItemGroup>
+
+                            <FindAppConfigFile PrimaryList=""@(None)"" SecondaryList=""@(Content)"" TargetPath=""$(TargetFileName).config"" Condition=""'$(AppConfig)'==''"">
+                                <Output TaskParameter=""AppConfigFile"" ItemName=""AppConfigWithTargetPath""/>
+                                <Output TaskParameter=""AppConfigFile"" PropertyName=""AppConfig""/>
+                            </FindAppConfigFile>
+
+                            <MakeDir Directories=""$(OutDir);$(IntermediateOutputPath);@(DocFileItem->'%(RelativeDir)');@(CreateDirectory)"" ContinueOnError=""True""/>
+                        </Target>
+
 
                        <ProjectExtensions>
                          <a>x</a>

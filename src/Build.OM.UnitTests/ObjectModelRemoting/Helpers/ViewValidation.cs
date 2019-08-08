@@ -4,6 +4,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Microsoft.Build.Construction;
     using Microsoft.Build.ObjectModelRemoting;
     using Microsoft.Build.Evaluation;
@@ -12,7 +13,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Xml.Schema;
     using System.Collections;
 
-    internal static class LinkedObjectsValidation
+    internal static class ViewValidation
     {
         public static void VerifySameLocationWithException(Func<ElementLocation> expectedGetter, Func<ElementLocation> actualGetter)
         {
@@ -250,6 +251,41 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             Assert.Equal(expectedLocal, actualLocal);
             Assert.Equal(expectedLinks, actualLinks);
+        }
+
+
+        internal static void Verify(ProjectMetadataElement viewXml, ProjectMetadataElement realXml)
+        {
+            VerifyProjectElementView(viewXml, realXml, true);
+
+            Assert.Equal(realXml.Name, viewXml.Name);
+            Assert.Equal(realXml.Value, viewXml.Value);
+            Assert.Equal(realXml.ExpressedAsAttribute, viewXml.ExpressedAsAttribute);
+        }
+
+        internal static void Verify(ProjectOutputElement viewXml, ProjectOutputElement realXml)
+        {
+            VerifyProjectElementView(viewXml, realXml, true);
+
+            Assert.Equal(realXml.TaskParameter, viewXml.TaskParameter);
+            VerifySameLocation(realXml.TaskParameterLocation, viewXml.TaskParameterLocation);
+            Assert.Equal(realXml.IsOutputItem, viewXml.IsOutputItem);
+            Assert.Equal(realXml.IsOutputProperty, viewXml.IsOutputProperty);
+            Assert.Equal(realXml.ItemType, viewXml.ItemType);
+            Assert.Equal(realXml.PropertyName, viewXml.PropertyName);
+            VerifySameLocation(realXml.PropertyNameLocation, viewXml.PropertyNameLocation);
+        }
+
+
+        internal static void Verify<T>(IEnumerable<T> viewXmlCollection, IEnumerable<T> realXmlCollection, Action<T, T> elementValidator)
+        {
+            var viewXmlList = viewXmlCollection.ToList();
+            var realXmlList = realXmlCollection.ToList();
+            Assert.Equal(realXmlList.Count, viewXmlList.Count);
+            for (int i = 0; i < realXmlList.Count; i++)
+            {
+                elementValidator(viewXmlList[i], realXmlList[i]);
+            }
         }
     }
 }
