@@ -75,28 +75,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var preReal = this.StdGroup.RealXml;
             var preView = this.StdGroup.ViewXml;
 
-            ViewValidation.VerifyProjectElementContainerView(preView, preReal, true);
-
-            Assert.Equal(preReal.FullPath, preView.FullPath);
-            Assert.Equal(preReal.DirectoryPath, preView.DirectoryPath);
-            Assert.Equal(preReal.Encoding, preView.Encoding);
-            Assert.Equal(preReal.DefaultTargets, preView.DefaultTargets);
-            Assert.Equal(preReal.InitialTargets, preView.InitialTargets);
-            Assert.Equal(preReal.Sdk, preView.Sdk);
-            Assert.Equal(preReal.TreatAsLocalProperty, preView.TreatAsLocalProperty);
-            Assert.Equal(preReal.ToolsVersion, preView.ToolsVersion);
-            Assert.Equal(preReal.HasUnsavedChanges, preView.HasUnsavedChanges);
-            Assert.Equal(preReal.PreserveFormatting, preView.PreserveFormatting);
-            Assert.Equal(preReal.Version, preView.Version);
-            Assert.Equal(preReal.TimeLastChanged, preView.TimeLastChanged);
-            Assert.Equal(preReal.LastWriteTimeWhenRead, preView.LastWriteTimeWhenRead);
-
-            ViewValidation.VerifySameLocation(preReal.ProjectFileLocation, preView.ProjectFileLocation);
-            ViewValidation.VerifySameLocation(preReal.ToolsVersionLocation, preView.ToolsVersionLocation);
-            ViewValidation.VerifySameLocation(preReal.DefaultTargetsLocation, preView.DefaultTargetsLocation);
-            ViewValidation.VerifySameLocation(preReal.InitialTargetsLocation, preView.InitialTargetsLocation);
-            ViewValidation.VerifySameLocation(preReal.SdkLocation, preView.SdkLocation);
-            ViewValidation.VerifySameLocation(preReal.TreatAsLocalPropertyLocation, preView.TreatAsLocalPropertyLocation);
+            ViewValidation.Verify(preView, preReal);
         }
         
         [Fact]
@@ -105,13 +84,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var preReal = this.StdGroup.RealXml;
             var preView = this.StdGroup.ViewXml;
 
-            Assert.Single(preReal.ChooseElements);
-            Assert.Single(preView.ChooseElements);
+            Assert.NotEmpty(preReal.ChooseElements);
 
-            var realChoose = preReal.ChooseElements.FirstOrDefault();
-            var viewChoose = preView.ChooseElements.FirstOrDefault();
-
-            ViewValidation.VerifyProjectElementView(viewChoose, realChoose, true);
+            ViewValidation.Verify(preView.ChooseElements, preReal.ChooseElements, ViewValidation.VerifyProjectElement);
         }
 
         [Fact]
@@ -123,17 +98,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var realExtensionsList = preReal.ChildrenReversed.OfType<ProjectExtensionsElement>().ToList();
             var viewExtensionsList = preView.ChildrenReversed.OfType<ProjectExtensionsElement>().ToList();
 
-            Assert.Single(realExtensionsList);
-            Assert.Single(viewExtensionsList);
-            var realExtension = realExtensionsList.FirstOrDefault();
-            var viewExtension = viewExtensionsList.FirstOrDefault();
-            ViewValidation.VerifyProjectElementView(viewExtension, realExtension, true);
-            Assert.Equal(realExtension.Content, viewExtension.Content);
+            Assert.NotEmpty(realExtensionsList);
 
-            Assert.Equal(realExtension["a"], viewExtension["a"]);
-            Assert.Equal(realExtension["b"], viewExtension["b"]);
-            Assert.Equal("x", viewExtension["a"]);
-            Assert.Equal("y", viewExtension["b"]);
+            ViewValidation.Verify(viewExtensionsList, realExtensionsList, ViewValidation.Verify);
         }
 
         [Fact]
@@ -153,7 +120,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewImport = viewImports[i];
                 var realImport = realImports[i];
-                ViewValidation.VerifyProjectElementView(viewImport, realImport, true);
+                ViewValidation.VerifyProjectElement(viewImport, realImport);
 
                 Assert.Equal(realImport.Project, viewImport.Project);
                 ViewValidation.VerifySameLocation(realImport.ProjectLocation, viewImport.ProjectLocation);
@@ -165,7 +132,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.Equal(realImport.MinimumVersion, viewImport.MinimumVersion);
                 ViewValidation.VerifySameLocation(realImport.SdkLocation, viewImport.SdkLocation);
                 Assert.Equal(realImport.ImplicitImportLocation, viewImport.ImplicitImportLocation);
-                ViewValidation.VerifyProjectElementView(viewImport.OriginalElement, realImport.OriginalElement, true);
+                ViewValidation.VerifyProjectElement(viewImport.OriginalElement, realImport.OriginalElement);
             }
         }
 
@@ -185,7 +152,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewImportGroup = viewImportGroups[i];
                 var realImportGroup = realImportGroups[i];
-                ViewValidation.VerifyProjectElementView(viewImportGroup, realImportGroup, true);
+                ViewValidation.VerifyProjectElement(viewImportGroup, realImportGroup);
 
                 Assert.Equal(realImportGroup.Imports.Count, viewImportGroup.Imports.Count);
             }
@@ -207,7 +174,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItemDef = viewlItemDefinitions[i];
                 var realItemDef = realItemDefinitions[i];
-                ViewValidation.VerifyProjectElementView(viewItemDef, realItemDef, true);
+                ViewValidation.VerifyProjectElement(viewItemDef, realItemDef);
 
                 Assert.Equal(realItemDef.ItemType, viewItemDef.ItemType);
                 ViewValidation.Verify(viewItemDef.Metadata, realItemDef.Metadata, ViewValidation.Verify);
@@ -230,7 +197,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItemDefGroup = viewlItemDefinitionGroups[i];
                 var realItemDefGroup = realItemDefinitionGroups[i];
-                ViewValidation.VerifyProjectElementView(viewItemDefGroup, realItemDefGroup, true);
+                ViewValidation.VerifyProjectElement(viewItemDefGroup, realItemDefGroup);
 
                 Assert.Equal(viewItemDefGroup.ItemDefinitions.Count, viewItemDefGroup.ItemDefinitions.Count);
             }
@@ -252,7 +219,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItem = viewlItems[i];
                 var realItem = realItems[i];
-                ViewValidation.VerifyProjectElementView(viewItem, realItem, true);
+                ViewValidation.VerifyProjectElement(viewItem, realItem);
 
                 Assert.Equal(realItem.ItemType, viewItem.ItemType);
                 Assert.Equal(realItem.Include, viewItem.Include);
@@ -292,7 +259,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewItemGroup = viewItemGroups[i];
                 var realItemGroup = realItemGroups[i];
-                ViewValidation.VerifyProjectElementView(viewItemGroup, realItemGroup, true);
+                ViewValidation.VerifyProjectElement(viewItemGroup, realItemGroup);
 
                 Assert.Equal(viewItemGroup.Items.Count, viewItemGroup.Items.Count);
             }
@@ -314,7 +281,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewProperty = viewProperties[i];
                 var realProperty = realProperties[i];
-                ViewValidation.VerifyProjectElementView(viewProperty, realProperty, true);
+                ViewValidation.VerifyProjectElement(viewProperty, realProperty);
                 Assert.Equal(realProperty.Name, viewProperty.Name);
                 Assert.Equal(realProperty.Value, viewProperty.Value);
             }
@@ -336,7 +303,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewPropertyGroup = viewPropertieGroups[i];
                 var realPropertyGroup = realPropertieGroups[i];
-                ViewValidation.VerifyProjectElementView(viewPropertyGroup, realPropertyGroup, true);
+                ViewValidation.VerifyProjectElement(viewPropertyGroup, realPropertyGroup);
 
                 Assert.Equal(realPropertyGroup.Properties.Count, viewPropertyGroup.Properties.Count);
                 Assert.Equal(realPropertyGroup.PropertiesReversed.Count, viewPropertyGroup.PropertiesReversed.Count);
@@ -359,7 +326,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewElement = viewCollection[i];
                 var realElement = realCollection[i];
-                ViewValidation.VerifyProjectElementView(viewElement, realElement, true);
+                ViewValidation.VerifyProjectElement(viewElement, realElement);
             }
         }
 
@@ -379,7 +346,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewElement = viewCollection[i];
                 var realElement = realCollection[i];
-                ViewValidation.VerifyProjectElementView(viewElement, realElement, true);
+                ViewValidation.VerifyProjectElement(viewElement, realElement);
             }
         }
 
@@ -399,7 +366,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 var viewElement = viewCollection[i];
                 var realElement = realCollection[i];
-                ViewValidation.VerifyProjectElementView(viewElement, realElement, true);
+                ViewValidation.VerifyProjectElement(viewElement, realElement);
             }
         }
 
@@ -412,34 +379,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var realCollection = preReal.Targets.ToList();
             var viewCollection = preView.Targets.ToList();
 
-            Assert.NotEmpty(realCollection);
-            Assert.Equal(realCollection.Count, viewCollection.Count);
-
-            for (int i = 0; i < realCollection.Count; i++)
-            {
-                var viewTarget = viewCollection[i];
-                var realTarget = realCollection[i];
-                ViewValidation.VerifyProjectElementView(viewTarget, realTarget, true);
-
-                Assert.Equal(realTarget.Name, viewTarget.Name);
-                ViewValidation.VerifySameLocation(realTarget.NameLocation, viewTarget.NameLocation);
-                Assert.Equal(realTarget.Inputs, viewTarget.Inputs);
-                ViewValidation.VerifySameLocation(realTarget.InputsLocation, viewTarget.InputsLocation);
-                Assert.Equal(realTarget.Outputs, viewTarget.Outputs);
-                ViewValidation.VerifySameLocation(realTarget.OutputsLocation, viewTarget.OutputsLocation);
-                Assert.Equal(realTarget.KeepDuplicateOutputs, viewTarget.KeepDuplicateOutputs);
-                ViewValidation.VerifySameLocation(realTarget.KeepDuplicateOutputsLocation, viewTarget.KeepDuplicateOutputsLocation);
-                Assert.Equal(realTarget.DependsOnTargets, viewTarget.DependsOnTargets);
-                ViewValidation.VerifySameLocation(realTarget.DependsOnTargetsLocation, viewTarget.DependsOnTargetsLocation);
-                Assert.Equal(realTarget.BeforeTargets, viewTarget.BeforeTargets);
-                ViewValidation.VerifySameLocation(realTarget.BeforeTargetsLocation, viewTarget.BeforeTargetsLocation);
-                Assert.Equal(realTarget.AfterTargets, viewTarget.AfterTargets);
-                ViewValidation.VerifySameLocation(realTarget.AfterTargetsLocation, viewTarget.AfterTargetsLocation);
-                Assert.Equal(realTarget.Returns, viewTarget.Returns);
-                ViewValidation.VerifySameLocation(realTarget.ReturnsLocation, viewTarget.ReturnsLocation);
-
-
-            }
+            Assert.NotEmpty(realCollection);  // to ensure we actually have some elements in test project
+            ViewValidation.Verify(viewCollection, realCollection, ViewValidation.Verify);
         }
 
         /// Also validates
@@ -454,69 +395,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var realCollection = preReal.AllChildren.OfType<ProjectTaskElement>().ToList();
             var viewCollection = preView.AllChildren.OfType<ProjectTaskElement>().ToList();
 
-            Assert.NotEmpty(realCollection);
-            Assert.Equal(realCollection.Count, viewCollection.Count);
-
-            for (int i = 0; i < realCollection.Count; i++)
-            {
-                var viewTask = viewCollection[i];
-                var realTask = realCollection[i];
-                ViewValidation.VerifyProjectElementView(viewTask, realTask, true);
-
-                Assert.Equal(realTask.Name, viewTask.Name);
-
-                Assert.Equal(realTask.ContinueOnError, viewTask.ContinueOnError);
-                ViewValidation.VerifySameLocation(realTask.ContinueOnErrorLocation, viewTask.ContinueOnErrorLocation);
-                Assert.Equal(realTask.MSBuildRuntime, viewTask.MSBuildRuntime);
-                ViewValidation.VerifySameLocation(realTask.MSBuildRuntimeLocation, viewTask.MSBuildRuntimeLocation);
-
-                Assert.Equal(realTask.MSBuildArchitecture, viewTask.MSBuildArchitecture);
-                ViewValidation.VerifySameLocation(realTask.MSBuildArchitectureLocation, viewTask.MSBuildArchitectureLocation);
-
-                ViewValidation.Verify(viewTask.Outputs, realTask.Outputs, ViewValidation.Verify);
-
-                var realParams = realTask.Parameters;
-                var viewParams = viewTask.Parameters;
-                if (realParams == null)
-                {
-                    Assert.Null(viewParams);
-                }
-                else
-                {
-                    Assert.NotNull(viewParams);
-
-                    Assert.Equal(realParams.Count, viewParams.Count);
-                    foreach (var k in realParams.Keys)
-                    {
-                        Assert.True(viewParams.ContainsKey(k));
-                        Assert.Equal(realParams[k], viewParams[k]);
-                    }
-                }
-
-                var realParamsLoc = realTask.ParameterLocations;
-                var viewParamsLoc = viewTask.ParameterLocations;
-                if (realParamsLoc == null)
-                {
-                    Assert.Null(viewParamsLoc);
-                }
-                else
-                {
-                    Assert.NotNull(viewParamsLoc);
-
-                    var realPLocList = realParamsLoc.ToList();
-                    var viewPLocList = viewParamsLoc.ToList();
-
-                    Assert.Equal(realPLocList.Count, viewPLocList.Count);
-                    for (int li = 0; li < realPLocList.Count; li++)
-                    {
-                        var rkvp = realPLocList[li];
-                        var vkvp = viewPLocList[li];
-
-                        Assert.Equal(rkvp.Key, vkvp.Key);
-                        ViewValidation.VerifySameLocation(rkvp.Value, vkvp.Value);
-                    }
-                }
-            }
+            Assert.NotEmpty(realCollection);  // to ensure we actually have some elements in test project
+            ViewValidation.Verify(viewCollection, realCollection, ViewValidation.Verify);
         }
 
         // Also validates:
@@ -533,38 +413,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var realCollection = preReal.AllChildren.OfType<ProjectUsingTaskElement>().ToList();
             var viewCollection = preView.AllChildren.OfType<ProjectUsingTaskElement>().ToList();
 
-            Assert.NotEmpty(realCollection);
-            Assert.Equal(realCollection.Count, viewCollection.Count);
-
-            for (int i = 0; i < realCollection.Count; i++)
-            {
-                var viewUsingTask = viewCollection[i];
-                var realUsingTask = realCollection[i];
-                ViewValidation.VerifyProjectElementView(viewUsingTask, realUsingTask, true);
-
-                Assert.Equal(realUsingTask.AssemblyFile, viewUsingTask.AssemblyFile);
-                ViewValidation.VerifySameLocation(realUsingTask.AssemblyFileLocation, viewUsingTask.AssemblyFileLocation);
-
-                Assert.Equal(realUsingTask.AssemblyName, viewUsingTask.AssemblyName);
-                ViewValidation.VerifySameLocation(realUsingTask.AssemblyNameLocation, viewUsingTask.AssemblyNameLocation);
-
-                Assert.Equal(realUsingTask.TaskName, viewUsingTask.TaskName);
-                ViewValidation.VerifySameLocation(realUsingTask.TaskNameLocation, viewUsingTask.TaskNameLocation);
-
-                Assert.Equal(realUsingTask.TaskFactory, viewUsingTask.TaskFactory);
-                ViewValidation.VerifySameLocation(realUsingTask.TaskFactoryLocation, viewUsingTask.TaskFactoryLocation);
-
-                Assert.Equal(realUsingTask.Runtime, viewUsingTask.Runtime);
-                ViewValidation.VerifySameLocation(realUsingTask.RuntimeLocation, viewUsingTask.RuntimeLocation);
-
-                Assert.Equal(realUsingTask.Architecture, viewUsingTask.Architecture);
-                ViewValidation.VerifySameLocation(realUsingTask.ArchitectureLocation, viewUsingTask.ArchitectureLocation);
-
-                ViewValidation.Verify(viewUsingTask.TaskBody, realUsingTask.TaskBody);
-                ViewValidation.Verify(viewUsingTask.ParameterGroup, realUsingTask.ParameterGroup);
-
-
-            }
+            Assert.NotEmpty(realCollection); // to ensure we actually have some elements in test project
+            ViewValidation.Verify(viewCollection, realCollection, ViewValidation.Verify);
         }
 
         ProjectOnErrorElement x1;
