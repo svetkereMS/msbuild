@@ -145,6 +145,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public static void VerifyProjectElementView(ProjectElement viewXml, ProjectElement realXml, bool recursive)
         {
+            if (viewXml == null && realXml == null) return;
+
             if (viewXml is ProjectElementContainer viewContainer)
             {
                 Assert.True(realXml is ProjectElementContainer);
@@ -256,6 +258,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         internal static void Verify(ProjectMetadataElement viewXml, ProjectMetadataElement realXml)
         {
+            if (viewXml == null && realXml == null) return;
             VerifyProjectElementView(viewXml, realXml, true);
 
             Assert.Equal(realXml.Name, viewXml.Name);
@@ -263,8 +266,71 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(realXml.ExpressedAsAttribute, viewXml.ExpressedAsAttribute);
         }
 
+
+        internal static void Verify(ProjectTaskElement viewXml, ProjectTaskElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElementView(viewXml, realXml, true);
+
+            Assert.Equal(realXml.Name, viewXml.Name);
+
+            Assert.Equal(realXml.ContinueOnError, viewXml.ContinueOnError);
+            ViewValidation.VerifySameLocation(realXml.ContinueOnErrorLocation, viewXml.ContinueOnErrorLocation);
+            Assert.Equal(realXml.MSBuildRuntime, viewXml.MSBuildRuntime);
+            ViewValidation.VerifySameLocation(realXml.MSBuildRuntimeLocation, viewXml.MSBuildRuntimeLocation);
+
+            Assert.Equal(realXml.MSBuildArchitecture, viewXml.MSBuildArchitecture);
+            ViewValidation.VerifySameLocation(realXml.MSBuildArchitectureLocation, viewXml.MSBuildArchitectureLocation);
+
+            ViewValidation.Verify(viewXml.Outputs, realXml.Outputs, ViewValidation.Verify);
+
+            var realParams = realXml.Parameters;
+            var viewParams = viewXml.Parameters;
+            if (realParams == null)
+            {
+                Assert.Null(viewParams);
+            }
+            else
+            {
+                Assert.NotNull(viewParams);
+
+                Assert.Equal(realParams.Count, viewParams.Count);
+                foreach (var k in realParams.Keys)
+                {
+                    Assert.True(viewParams.ContainsKey(k));
+                    Assert.Equal(realParams[k], viewParams[k]);
+                }
+            }
+
+            var realParamsLoc = realXml.ParameterLocations;
+            var viewParamsLoc = viewXml.ParameterLocations;
+            if (realParamsLoc == null)
+            {
+                Assert.Null(viewParamsLoc);
+            }
+            else
+            {
+                Assert.NotNull(viewParamsLoc);
+
+                var realPLocList = realParamsLoc.ToList();
+                var viewPLocList = viewParamsLoc.ToList();
+
+                Assert.Equal(realPLocList.Count, viewPLocList.Count);
+                for (int li = 0; li < realPLocList.Count; li++)
+                {
+                    var rkvp = realPLocList[li];
+                    var vkvp = viewPLocList[li];
+
+                    Assert.Equal(rkvp.Key, vkvp.Key);
+                    ViewValidation.VerifySameLocation(rkvp.Value, vkvp.Value);
+                }
+            }
+        }
+
+
         internal static void Verify(ProjectOutputElement viewXml, ProjectOutputElement realXml)
         {
+            if (viewXml == null && realXml == null) return;
             VerifyProjectElementView(viewXml, realXml, true);
 
             Assert.Equal(realXml.TaskParameter, viewXml.TaskParameter);
@@ -274,6 +340,43 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(realXml.ItemType, viewXml.ItemType);
             Assert.Equal(realXml.PropertyName, viewXml.PropertyName);
             VerifySameLocation(realXml.PropertyNameLocation, viewXml.PropertyNameLocation);
+        }
+
+
+        internal static void Verify(ProjectUsingTaskBodyElement viewXml, ProjectUsingTaskBodyElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+
+            VerifyProjectElementView(viewXml, realXml, true);
+
+            Assert.Equal(realXml.TaskBody, viewXml.TaskBody);
+            Assert.Equal(realXml.Evaluate, viewXml.Evaluate);
+            VerifySameLocation(realXml.EvaluateLocation, viewXml.EvaluateLocation);
+        }
+
+        internal static void Verify(ProjectUsingTaskParameterElement viewXml, ProjectUsingTaskParameterElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+
+            VerifyProjectElementView(viewXml, realXml, true);
+
+            Assert.Equal(realXml.Name, viewXml.Name);
+            Assert.Equal(realXml.ParameterType, viewXml.ParameterType);
+            VerifySameLocation(realXml.ParameterTypeLocation, viewXml.ParameterTypeLocation);
+            Assert.Equal(realXml.Output, viewXml.Output);
+            VerifySameLocation(realXml.OutputLocation, viewXml.OutputLocation);
+            Assert.Equal(realXml.Required, viewXml.Required);
+            VerifySameLocation(realXml.RequiredLocation, viewXml.RequiredLocation);
+        }
+
+
+        internal static void Verify(UsingTaskParameterGroupElement viewXml, UsingTaskParameterGroupElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+
+            VerifyProjectElementView(viewXml, realXml, true);
+
+            Verify(viewXml.Parameters, realXml.Parameters, Verify);
         }
 
 

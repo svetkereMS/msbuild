@@ -437,10 +437,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 ViewValidation.VerifySameLocation(realTarget.AfterTargetsLocation, viewTarget.AfterTargetsLocation);
                 Assert.Equal(realTarget.Returns, viewTarget.Returns);
                 ViewValidation.VerifySameLocation(realTarget.ReturnsLocation, viewTarget.ReturnsLocation);
+
+
             }
         }
 
-
+        /// Also validates
+        /// ProjectOutputElement
+        /// 
         [Fact]
         public void ProjectTaskElementReadOnly()
         {
@@ -470,9 +474,55 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 ViewValidation.VerifySameLocation(realTask.MSBuildArchitectureLocation, viewTask.MSBuildArchitectureLocation);
 
                 ViewValidation.Verify(viewTask.Outputs, realTask.Outputs, ViewValidation.Verify);
+
+                var realParams = realTask.Parameters;
+                var viewParams = viewTask.Parameters;
+                if (realParams == null)
+                {
+                    Assert.Null(viewParams);
+                }
+                else
+                {
+                    Assert.NotNull(viewParams);
+
+                    Assert.Equal(realParams.Count, viewParams.Count);
+                    foreach (var k in realParams.Keys)
+                    {
+                        Assert.True(viewParams.ContainsKey(k));
+                        Assert.Equal(realParams[k], viewParams[k]);
+                    }
+                }
+
+                var realParamsLoc = realTask.ParameterLocations;
+                var viewParamsLoc = viewTask.ParameterLocations;
+                if (realParamsLoc == null)
+                {
+                    Assert.Null(viewParamsLoc);
+                }
+                else
+                {
+                    Assert.NotNull(viewParamsLoc);
+
+                    var realPLocList = realParamsLoc.ToList();
+                    var viewPLocList = viewParamsLoc.ToList();
+
+                    Assert.Equal(realPLocList.Count, viewPLocList.Count);
+                    for (int li = 0; li < realPLocList.Count; li++)
+                    {
+                        var rkvp = realPLocList[li];
+                        var vkvp = viewPLocList[li];
+
+                        Assert.Equal(rkvp.Key, vkvp.Key);
+                        ViewValidation.VerifySameLocation(rkvp.Value, vkvp.Value);
+                    }
+                }
             }
         }
 
+        // Also validates:
+        // ProjectUsingTaskBodyElement
+        // UsingTaskParameterGroupElement
+        // ProjectUsingTaskParameterElement
         [Fact]
         public void ProjectUsingTaskElementReadOnly()
         {
@@ -494,16 +544,28 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
                 Assert.Equal(realUsingTask.AssemblyFile, viewUsingTask.AssemblyFile);
                 ViewValidation.VerifySameLocation(realUsingTask.AssemblyFileLocation, viewUsingTask.AssemblyFileLocation);
+
+                Assert.Equal(realUsingTask.AssemblyName, viewUsingTask.AssemblyName);
+                ViewValidation.VerifySameLocation(realUsingTask.AssemblyNameLocation, viewUsingTask.AssemblyNameLocation);
+
+                Assert.Equal(realUsingTask.TaskName, viewUsingTask.TaskName);
+                ViewValidation.VerifySameLocation(realUsingTask.TaskNameLocation, viewUsingTask.TaskNameLocation);
+
+                Assert.Equal(realUsingTask.TaskFactory, viewUsingTask.TaskFactory);
+                ViewValidation.VerifySameLocation(realUsingTask.TaskFactoryLocation, viewUsingTask.TaskFactoryLocation);
+
+                Assert.Equal(realUsingTask.Runtime, viewUsingTask.Runtime);
+                ViewValidation.VerifySameLocation(realUsingTask.RuntimeLocation, viewUsingTask.RuntimeLocation);
+
+                Assert.Equal(realUsingTask.Architecture, viewUsingTask.Architecture);
+                ViewValidation.VerifySameLocation(realUsingTask.ArchitectureLocation, viewUsingTask.ArchitectureLocation);
+
+                ViewValidation.Verify(viewUsingTask.TaskBody, realUsingTask.TaskBody);
+                ViewValidation.Verify(viewUsingTask.ParameterGroup, realUsingTask.ParameterGroup);
+
+
             }
         }
-
-        ProjectUsingTaskElement x10;
-
-        UsingTaskParameterGroupElement x;
-        UsingTaskParameterGroupElement x13;
-        ProjectUsingTaskParameterElement x11;
-
-        ProjectUsingTaskBodyElement x9;
 
         ProjectOnErrorElement x1;
         ProjectOutputElement x3;

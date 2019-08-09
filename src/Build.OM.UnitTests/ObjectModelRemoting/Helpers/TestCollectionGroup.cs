@@ -159,6 +159,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                             </FindAppConfigFile>
 
                             <MakeDir Directories=""$(OutDir);$(IntermediateOutputPath);@(DocFileItem->'%(RelativeDir)');@(CreateDirectory)"" ContinueOnError=""True""/>
+
+                            <OnError ExecuteTargets='1'/>
+                            <OnError ExecuteTargets='2'/>
                         </Target>
 
 
