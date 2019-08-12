@@ -45,6 +45,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                        </UsingTask>
 
                         <UsingTask TaskName='LooserTask' AssemblyFile='af' TaskFactory='AssemblyFactory'>
+                           <Task Evaluate='false'>Contents</Task>
                            <ParameterGroup>
                               <YourParameter1 ParameterType='System.String' Output='true' Required='false'/>
                               <YourParameter2 ParameterType='System.String' Output='true' Required='false'/>

@@ -143,6 +143,12 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 Assert.NotNull(viewChild);
                 Assert.Same(realChild.Parent, realXml);
+                if (!object.ReferenceEquals(viewChild.Parent, viewXml))
+                {
+                    var lm = LinkedObjectsFactory.GetLink(viewXml) as ILinkMock;
+                    lm.Linker.ValidateNoDuplocates();
+                }
+
                 Assert.Same(viewChild.Parent, viewXml);
 
                 if (realChild is ProjectElementContainer realChildContainer)
@@ -227,36 +233,40 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
         }
 
-        public static void Verify(ProjectElement viewXml, ProjectElement realXml)
+        public static void VerifyFindType(ProjectElement viewXml, ProjectElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyLinkedNotNull(viewXml);
             VerifyNotLinkedNotNull(realXml);
 
             if (VerifyCheckType<ProjectMetadataElement>(viewXml, realXml, Verify)) return;
-
+            if (VerifyCheckType<ProjectChooseElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectWhenElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectOtherwiseElement>(viewXml, realXml, Verify)) return;
             if (VerifyCheckType<ProjectTaskElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<ProjectOutputElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<ProjectUsingTaskBodyElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<ProjectUsingTaskParameterElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<UsingTaskParameterGroupElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<ProjectUsingTaskElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<ProjectTargetElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<ProjectRootElement>(viewXml, realXml, Verify)) return;
-
             if (VerifyCheckType<ProjectExtensionsElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectImportElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectImportGroupElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectItemDefinitionElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectItemDefinitionGroupElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectItemElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectItemGroupElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectPropertyElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectPropertyGroupElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectSdkElement>(viewXml, realXml, Verify)) return;
+            if (VerifyCheckType<ProjectOnErrorElement>(viewXml, realXml, Verify)) return;
 
             throw new NotImplementedException($"Unknown type:{viewXml.GetType().Name}");
         }
 
-        internal static void Verify(ProjectRootElement viewXml, ProjectRootElement realXml)
+        public static void Verify(ProjectRootElement viewXml, ProjectRootElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyProjectElement(viewXml, realXml);
@@ -281,9 +291,57 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             ViewValidation.VerifySameLocation(realXml.InitialTargetsLocation, viewXml.InitialTargetsLocation);
             ViewValidation.VerifySameLocation(realXml.SdkLocation, viewXml.SdkLocation);
             ViewValidation.VerifySameLocation(realXml.TreatAsLocalPropertyLocation, viewXml.TreatAsLocalPropertyLocation);
+
+            ViewValidation.Verify(viewXml.ChooseElements, realXml.ChooseElements, Verify);
+            ViewValidation.Verify(viewXml.ItemDefinitionGroups, realXml.ItemDefinitionGroups, Verify);
+            ViewValidation.Verify(viewXml.ItemDefinitions, realXml.ItemDefinitions, Verify);
+            ViewValidation.Verify(viewXml.ItemGroups, realXml.ItemGroups, Verify);
+            ViewValidation.Verify(viewXml.Items, realXml.Items, Verify);
+            ViewValidation.Verify(viewXml.ImportGroups, realXml.ImportGroups, Verify);
+            ViewValidation.Verify(viewXml.Imports, realXml.Imports, Verify);
+            ViewValidation.Verify(viewXml.PropertyGroups, realXml.PropertyGroups, Verify);
+            ViewValidation.Verify(viewXml.Properties, realXml.Properties, Verify);
+            ViewValidation.Verify(viewXml.Targets, realXml.Targets, Verify);
+            ViewValidation.Verify(viewXml.UsingTasks, realXml.UsingTasks, Verify);
+            ViewValidation.Verify(viewXml.ItemGroupsReversed, realXml.ItemGroupsReversed, Verify);
+            ViewValidation.Verify(viewXml.ItemDefinitionGroupsReversed, realXml.ItemDefinitionGroupsReversed, Verify);
+            ViewValidation.Verify(viewXml.ImportGroupsReversed, realXml.ImportGroupsReversed, Verify);
+            ViewValidation.Verify(viewXml.PropertyGroupsReversed, realXml.PropertyGroupsReversed, Verify);
         }
 
-        internal static void Verify(ProjectExtensionsElement viewXml, ProjectExtensionsElement realXml)
+        public static void Verify(ProjectChooseElement viewXml, ProjectChooseElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+
+            Verify(viewXml.WhenElements, realXml.WhenElements, Verify);
+            Verify(viewXml.OtherwiseElement, realXml.OtherwiseElement);
+        }
+
+        public static void Verify(ProjectWhenElement viewXml, ProjectWhenElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+
+            Verify(viewXml.ChooseElements, realXml.ChooseElements);
+            Verify(viewXml.ItemGroups, realXml.ItemGroups);
+            Verify(viewXml.PropertyGroups, realXml.PropertyGroups);
+        }
+
+        public static void Verify(ProjectOtherwiseElement viewXml, ProjectOtherwiseElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+
+            Verify(viewXml.ChooseElements, realXml.ChooseElements);
+            Verify(viewXml.ItemGroups, realXml.ItemGroups);
+            Verify(viewXml.PropertyGroups, realXml.PropertyGroups);
+        }
+
+        public static void Verify(ProjectExtensionsElement viewXml, ProjectExtensionsElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyProjectElement(viewXml, realXml);
@@ -296,8 +354,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal("y", viewXml["b"]);
         }
 
-
-        internal static void Verify(ProjectMetadataElement viewXml, ProjectMetadataElement realXml)
+        public static void Verify(ProjectMetadataElement viewXml, ProjectMetadataElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyProjectElement(viewXml, realXml);
@@ -307,7 +364,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(realXml.ExpressedAsAttribute, viewXml.ExpressedAsAttribute);
         }
 
-        internal static void Verify(ProjectTaskElement viewXml, ProjectTaskElement realXml)
+        public static void Verify(ProjectTaskElement viewXml, ProjectTaskElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyProjectElement(viewXml, realXml);
@@ -367,7 +424,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
         }
 
-        internal static void Verify(ProjectOutputElement viewXml, ProjectOutputElement realXml)
+        public static void Verify(ProjectOutputElement viewXml, ProjectOutputElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyProjectElement(viewXml, realXml);
@@ -381,7 +438,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             VerifySameLocation(realXml.PropertyNameLocation, viewXml.PropertyNameLocation);
         }
 
-        internal static void Verify(ProjectUsingTaskBodyElement viewXml, ProjectUsingTaskBodyElement realXml)
+        public static void Verify(ProjectUsingTaskBodyElement viewXml, ProjectUsingTaskBodyElement realXml)
         {
             if (viewXml == null && realXml == null) return;
 
@@ -392,7 +449,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             VerifySameLocation(realXml.EvaluateLocation, viewXml.EvaluateLocation);
         }
 
-        internal static void Verify(ProjectUsingTaskParameterElement viewXml, ProjectUsingTaskParameterElement realXml)
+        public static void Verify(ProjectUsingTaskParameterElement viewXml, ProjectUsingTaskParameterElement realXml)
         {
             if (viewXml == null && realXml == null) return;
 
@@ -407,7 +464,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             VerifySameLocation(realXml.RequiredLocation, viewXml.RequiredLocation);
         }
 
-        internal static void Verify(UsingTaskParameterGroupElement viewXml, UsingTaskParameterGroupElement realXml)
+        public static void Verify(UsingTaskParameterGroupElement viewXml, UsingTaskParameterGroupElement realXml)
         {
             if (viewXml == null && realXml == null) return;
 
@@ -416,7 +473,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Verify(viewXml.Parameters, realXml.Parameters, Verify);
         }
 
-        internal static void Verify(ProjectUsingTaskElement viewXml, ProjectUsingTaskElement realXml)
+        public static void Verify(ProjectUsingTaskElement viewXml, ProjectUsingTaskElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyProjectElement(viewXml, realXml);
@@ -444,7 +501,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             ViewValidation.Verify(viewXml.ParameterGroup, realXml.ParameterGroup);
         }
 
-        internal static void Verify(ProjectTargetElement viewXml, ProjectTargetElement realXml)
+        public static void Verify(ProjectTargetElement viewXml, ProjectTargetElement realXml)
         {
             if (viewXml == null && realXml == null) return;
             VerifyProjectElement(viewXml, realXml);
@@ -467,7 +524,123 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(realXml.Returns, viewXml.Returns);
             ViewValidation.VerifySameLocation(realXml.ReturnsLocation, viewXml.ReturnsLocation);
 
+            ViewValidation.Verify(viewXml.ItemGroups, realXml.ItemGroups, ViewValidation.Verify);
+            ViewValidation.Verify(viewXml.PropertyGroups, realXml.PropertyGroups, ViewValidation.Verify);
+            ViewValidation.Verify(viewXml.OnErrors, realXml.OnErrors, ViewValidation.Verify);
             ViewValidation.Verify(viewXml.Tasks, realXml.Tasks, ViewValidation.Verify);
+        }
+
+        public static void Verify(ProjectImportElement viewXml, ProjectImportElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+
+            Assert.Equal(realXml.Project, viewXml.Project);
+            ViewValidation.VerifySameLocation(realXml.ProjectLocation, viewXml.ProjectLocation);
+
+            // mostly test the remoting infrastructure. Sdk Imports are not really covered by simple samples for now.
+            // Todo: add mock SDK import closure to SdtGroup?
+            Assert.Equal(realXml.Sdk, viewXml.Sdk);
+            Assert.Equal(realXml.Version, viewXml.Version);
+            Assert.Equal(realXml.MinimumVersion, viewXml.MinimumVersion);
+            ViewValidation.VerifySameLocation(realXml.SdkLocation, viewXml.SdkLocation);
+            Assert.Equal(realXml.ImplicitImportLocation, viewXml.ImplicitImportLocation);
+            ViewValidation.VerifyProjectElement(viewXml.OriginalElement, realXml.OriginalElement);
+        }
+
+        public static void Verify(ProjectImportGroupElement viewXml, ProjectImportGroupElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+            ViewValidation.Verify(viewXml.Imports, realXml.Imports, ViewValidation.Verify);
+        }
+
+        public static void Verify(ProjectItemDefinitionElement viewXml, ProjectItemDefinitionElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+            Assert.Equal(realXml.ItemType, viewXml.ItemType);
+            ViewValidation.Verify(viewXml.Metadata, realXml.Metadata, ViewValidation.Verify);
+        }
+
+        public static void Verify(ProjectItemDefinitionGroupElement viewXml, ProjectItemDefinitionGroupElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+            ViewValidation.Verify(viewXml.ItemDefinitions, realXml.ItemDefinitions, ViewValidation.Verify);
+        }
+
+        public static void Verify(ProjectItemElement viewXml, ProjectItemElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+            Assert.Equal(realXml.ItemType, viewXml.ItemType);
+            Assert.Equal(realXml.Include, viewXml.Include);
+            Assert.Equal(realXml.Exclude, viewXml.Exclude);
+            Assert.Equal(realXml.Remove, viewXml.Remove);
+            Assert.Equal(realXml.Update, viewXml.Update);
+            Assert.Equal(realXml.KeepMetadata, viewXml.KeepMetadata);
+            Assert.Equal(realXml.RemoveMetadata, viewXml.RemoveMetadata);
+            Assert.Equal(realXml.KeepDuplicates, viewXml.KeepDuplicates);
+            Assert.Equal(realXml.HasMetadata, viewXml.HasMetadata);
+
+           Verify(viewXml.Metadata, realXml.Metadata, ViewValidation.Verify);
+
+           VerifySameLocation(realXml.IncludeLocation, viewXml.IncludeLocation);
+           VerifySameLocation(realXml.ExcludeLocation, viewXml.ExcludeLocation);
+           VerifySameLocation(realXml.RemoveLocation, viewXml.RemoveLocation);
+           VerifySameLocation(realXml.UpdateLocation, viewXml.UpdateLocation);
+           VerifySameLocation(realXml.KeepMetadataLocation, viewXml.KeepMetadataLocation);
+           VerifySameLocation(realXml.RemoveMetadataLocation, viewXml.RemoveMetadataLocation);
+           VerifySameLocation(realXml.KeepDuplicatesLocation, viewXml.KeepDuplicatesLocation);
+        }
+
+        public static void Verify(ProjectItemGroupElement viewXml, ProjectItemGroupElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+            Verify(viewXml.Items, realXml.Items, Verify);
+        }
+
+        public static void Verify(ProjectPropertyElement viewXml, ProjectPropertyElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+            Assert.Equal(realXml.Name, viewXml.Name);
+            Assert.Equal(realXml.Value, viewXml.Value);
+        }
+
+        public static void Verify(ProjectPropertyGroupElement viewXml, ProjectPropertyGroupElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+            Verify(viewXml.Properties, realXml.Properties, Verify);
+            Verify(viewXml.PropertiesReversed, realXml.PropertiesReversed, Verify);
+        }
+
+        public static void Verify(ProjectSdkElement viewXml, ProjectSdkElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+            Assert.Equal(realXml.Name, viewXml.Name);
+            Assert.Equal(realXml.Version, viewXml.Version);
+            Assert.Equal(realXml.MinimumVersion, viewXml.MinimumVersion);
+        }
+
+        public static void Verify(ProjectOnErrorElement viewXml, ProjectOnErrorElement realXml)
+        {
+            if (viewXml == null && realXml == null) return;
+            VerifyProjectElement(viewXml, realXml);
+
+            Assert.Equal(realXml.ExecuteTargetsAttribute, viewXml.ExecuteTargetsAttribute);
+            VerifySameLocation(realXml.ExecuteTargetsLocation, viewXml.ExecuteTargetsLocation);
         }
 
 
@@ -479,10 +652,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(realXmlList.Count, viewXmlList.Count);
             for (int i = 0; i < realXmlList.Count; i++)
             {
-                Verify(viewXmlList[i], realXmlList[i]);
+                VerifyFindType(viewXmlList[i], realXmlList[i]);
             }
         }
-
 
         public static void Verify<T>(IEnumerable<T> viewXmlCollection, IEnumerable<T> realXmlCollection, Action<T, T> elementValidator)
             where T : ProjectElement

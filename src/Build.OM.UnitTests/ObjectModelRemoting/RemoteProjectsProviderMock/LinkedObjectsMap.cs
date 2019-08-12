@@ -4,6 +4,7 @@
 namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     
     internal class LinkedObjectsMap<KeyType> : IDisposable
@@ -11,6 +12,23 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         private static object Lock { get; } = new object();
         private static UInt32 nextCollectionId = 0;
         private UInt32 nextLocalId = 0;
+
+        // internal fore debugging
+        internal object GetLockForDebug => Lock;
+
+        internal IEnumerable<LinkedObject> GetActiveLinks()
+        {
+            lock (Lock)
+            {
+                foreach (var h in activeLinks.Values)
+                {
+                    if (h.IsValid && h.RemoterWeak.TryGetTarget(out var result))
+                    {
+                        yield return result;
+                    }
+                }
+            }
+        }
 
         private static Dictionary<UInt32, LinkedObjectsMap<KeyType>> collections = new Dictionary<UInt32, LinkedObjectsMap<KeyType>>();
 
@@ -42,6 +60,12 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         private bool TryGetUnderLock(KeyType key, out LinkedObject result)
         {
             if (!indexByKey.TryGetValue(key, out var holder))
+            {
+                result = null;
+                return false;
+            }
+
+            if (!holder.IsValid)
             {
                 result = null;
                 return false;

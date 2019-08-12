@@ -10,8 +10,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Threading;
     using Microsoft.Build.Construction;
     using Microsoft.Build.Evaluation;
+    using Microsoft.Build.Framework;
     using Microsoft.Build.ObjectModelRemoting;
     using Microsoft.Build.Tasks;
+    using Xunit;
     using ExportedLinksMap = LinkedObjectsMap<object>;
     using ImportedLinksMap = LinkedObjectsMap<System.UInt32>;
 
@@ -115,7 +117,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             this.OwningCollection = (ProjectCollectionLinker)context;
         }
 
-        public abstract T CreateLinkedObject(ProjectCollectionLinker remote);
+        public abstract T CreateLinkedObject(IImportHolder holder);
     }
 
     /// <summary>
@@ -125,7 +127,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     /// </summary>
     internal interface ILinkMock
     {
+        ProjectCollectionLinker Linker { get; }
+
         object Remoter { get; }
+    }
+
+    internal interface IImportHolder
+    {
+        ProjectCollectionLinker Linker { get; }
+        UInt32 LocalId { get; }
     }
 
     /// <summary>
@@ -195,6 +205,56 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
         }
 
+        private static bool dbgValidateDuplicateViews = true;
+
+
+        internal  void ValidateNoDuplocates()
+        {
+            foreach (var r in imported)
+            {
+                lock (r.Value.ActiveImports.GetLockForDebug)
+                {
+                    ValidateNoDuplocates(r.Value.ActiveImports);
+                }
+            }
+        }
+
+        private void ValidateNoDuplocates(ImportedLinksMap map)
+        {
+            HashSet<object> views = new HashSet<object>();
+            HashSet<object> links = new HashSet<object>();
+            HashSet<object> remoters = new HashSet<object>();
+            foreach (var ai in map.GetActiveLinks())
+            {
+                var dbg = ai as IActiveImportDBG;
+                Assert.NotNull(dbg);
+                var view = dbg.Linked;
+                Assert.NotNull(view);
+                var link = LinkedObjectsFactory.GetLink(view) as ILinkMock;
+                Assert.NotNull(link);
+                var remoter = link.Remoter;
+                Assert.NotNull(remoter);
+
+                if (views.Contains(view))
+                {
+                    Assert.DoesNotContain(view, views);
+                }
+
+                if (links.Contains(link))
+                {
+                    Assert.DoesNotContain(link, links);
+                }
+
+                if (remoters.Contains(remoter))
+                {
+                    Assert.DoesNotContain(remoter, remoters);
+                }
+                views.Add(view);
+                links.Add(link);
+                remoters.Add(remoter);
+            }
+        }
+
         public T Import<T, RMock>(RMock remoter)
             where T : class
             where RMock : MockLinkRemoter<T>, new()
@@ -216,7 +276,20 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
 
             ActiveImport<T, RMock> proxy;
-            perRemoteCollection.ActiveImports.GetOrCreate(remoter.LocalId, remoter, this, out proxy, slow : true);
+            if (!dbgValidateDuplicateViews)
+            {
+                perRemoteCollection.ActiveImports.GetOrCreate(remoter.LocalId, remoter, this, out proxy, slow: true);
+            }
+            else
+            {
+                lock (perRemoteCollection.ActiveImports.GetLockForDebug)
+                {
+                    ValidateNoDuplocates(perRemoteCollection.ActiveImports);
+                    perRemoteCollection.ActiveImports.GetOrCreate(remoter.LocalId, remoter, this, out proxy, slow: true);
+                    ValidateNoDuplocates(perRemoteCollection.ActiveImports);
+                }
+            }
+
 
             return proxy.Linked;
         }
@@ -281,7 +354,13 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             return remoted;
         }
 
-        private class ActiveImport<T, RMock> : ImportedLinksMap.LinkedObject<RMock>
+
+        private interface IActiveImportDBG
+        {
+            object Linked { get; }
+        }
+
+        private class ActiveImport<T, RMock> : ImportedLinksMap.LinkedObject<RMock>, IImportHolder, IActiveImportDBG
             where T : class
             where RMock : MockLinkRemoter<T>
         {
@@ -293,6 +372,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 this.Linker = (ProjectCollectionLinker)context;
                 this.Linked = source.CreateLinkedObject(this.Linker);
             }
+
+            object IActiveImportDBG.Linked => this.Linked;
 
             public ProjectCollectionLinker Linker { get; private set; }
 
