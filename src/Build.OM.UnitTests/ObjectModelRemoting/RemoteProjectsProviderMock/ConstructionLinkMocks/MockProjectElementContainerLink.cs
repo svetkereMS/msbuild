@@ -56,14 +56,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     // not used - just a copy/paste template for remoting support objects of Construction model hierarchical containers.
     internal class TemplateProjectElementContainerLink : ProjectElementContainerLink, ILinkMock, IProjectElementLinkHelper, IProjectElementContainerLinkHelper
     {
-        public TemplateProjectElementContainerLink(MockProjectElementContainerLinkRemoter proxy, ProjectCollectionLinker linker)
+        public TemplateProjectElementContainerLink(MockProjectElementContainerLinkRemoter proxy, IImportHolder holder)
         {
-            this.Linker = linker;
+            this.Holder = holder;
             this.Proxy = proxy;
         }
 
+        public IImportHolder Holder { get; }
+        public ProjectCollectionLinker Linker => this.Holder.Linker;
         public MockProjectElementContainerLinkRemoter Proxy { get; }
-        public ProjectCollectionLinker Linker { get; }
         object ILinkMock.Remoter => this.Proxy;
         MockProjectElementLinkRemoter IProjectElementLinkHelper.ElementProxy => this.Proxy;
         MockProjectElementContainerLinkRemoter IProjectElementContainerLinkHelper.ContainerProxy => this.Proxy;

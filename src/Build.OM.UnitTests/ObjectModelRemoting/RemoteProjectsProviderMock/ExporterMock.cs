@@ -205,7 +205,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
         }
 
-        private static bool dbgValidateDuplicateViews = true;
+        private static bool dbgValidateDuplicateViews = false;
 
 
         internal  void ValidateNoDuplocates()
@@ -370,7 +370,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
                 this.Remoter = source;
                 this.Linker = (ProjectCollectionLinker)context;
-                this.Linked = source.CreateLinkedObject(this.Linker);
+                this.Linked = source.CreateLinkedObject(this);
             }
 
             object IActiveImportDBG.Linked => this.Linked;

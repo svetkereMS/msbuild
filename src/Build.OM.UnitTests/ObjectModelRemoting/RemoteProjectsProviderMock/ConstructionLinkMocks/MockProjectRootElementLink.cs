@@ -15,10 +15,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     {
         ProjectRootElement ProjectXml => (ProjectRootElement)Source;
 
-        public override ProjectElement CreateLinkedObject(ProjectCollectionLinker remote)
+        public override ProjectElement CreateLinkedObject(IImportHolder holder)
         {
-            var link = new MockProjectRootElementLink(this, remote);
-            return remote.LinkFactory.Create(link);
+            var link = new MockProjectRootElementLink(this, holder);
+            return holder.Linker.LinkFactory.Create(link);
         }
 
         public override ProjectElement ImportImpl(ProjectCollectionLinker remote)
@@ -146,13 +146,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal class MockProjectRootElementLink : ProjectRootElementLink, ILinkMock, IProjectElementLinkHelper, IProjectElementContainerLinkHelper
     {
-        public MockProjectRootElementLink(MockProjectRootElementLinkRemoter proxy, ProjectCollectionLinker linker)
+        public MockProjectRootElementLink(MockProjectRootElementLinkRemoter proxy, IImportHolder holder)
         {
-            this.Linker = linker;
+            this.Holder = holder;
             this.Proxy = proxy;
         }
 
-        public ProjectCollectionLinker Linker { get; }
+        public IImportHolder Holder { get; }
+        public ProjectCollectionLinker Linker => this.Holder.Linker;
         public MockProjectRootElementLinkRemoter Proxy { get; }
         object ILinkMock.Remoter => this.Proxy;
         MockProjectElementLinkRemoter IProjectElementLinkHelper.ElementProxy => this.Proxy;

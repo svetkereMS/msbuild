@@ -143,6 +143,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             {
                 Assert.NotNull(viewChild);
                 Assert.Same(realChild.Parent, realXml);
+
                 if (!object.ReferenceEquals(viewChild.Parent, viewXml))
                 {
                     var lm = LinkedObjectsFactory.GetLink(viewXml) as ILinkMock;
