@@ -213,7 +213,23 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Verify(view.GlobalProperties, real.GlobalProperties, (a, b, v, r) => Assert.Equal(b, a), view, real);
             Verify(view.Imports, real.Imports, Verify, view, real);
             Verify(view.ItemTypes, real.ItemTypes, (a, b, v, r) => Assert.Equal(b, a), view, real);
-            Verify(view.ImportsIncludingDuplicates, real.ImportsIncludingDuplicates, Verify, view, real);
+
+            // this can only be used if project is loaded with ProjectLoadSettings.RecordDuplicateButNotCircularImports
+            // or it throws otherwise. Slightly odd and inconvenient API design, but thats how it is.
+            bool isImportsIncludingDuplicatesAvailable = false;
+            try
+            {
+                var testLoadSettings = real.ImportsIncludingDuplicates;
+                isImportsIncludingDuplicatesAvailable = true;
+            }
+            catch { }
+
+            if (isImportsIncludingDuplicatesAvailable)
+            {
+                Verify(view.ImportsIncludingDuplicates, real.ImportsIncludingDuplicates, Verify, view, real);
+            }
+
+            
             Verify(view.AllEvaluatedProperties, real.AllEvaluatedProperties, Verify, view, real);
             Verify(view.AllEvaluatedItemDefinitionMetadata, real.AllEvaluatedItemDefinitionMetadata, Verify, view, real);
             Verify(view.AllEvaluatedItems, real.AllEvaluatedItems, Verify, view, real);
