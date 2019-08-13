@@ -13,7 +13,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Xml.Schema;
     using System.Collections;
 
-    internal static class ViewValidation
+    internal static partial class ViewValidation
     {
         public static void VerifySameLocationWithException(Func<ElementLocation> expectedGetter, Func<ElementLocation> actualGetter)
         {
@@ -660,6 +660,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public static void Verify<T>(IEnumerable<T> viewXmlCollection, IEnumerable<T> realXmlCollection, Action<T, T> elementValidator)
             where T : ProjectElement
         {
+            if (viewXmlCollection == null && realXmlCollection == null) return;
+            Assert.NotNull(viewXmlCollection);
+            Assert.NotNull(realXmlCollection);
+
             var viewXmlList = viewXmlCollection.ToList();
             var realXmlList = realXmlCollection.ToList();
             Assert.Equal(realXmlList.Count, viewXmlList.Count);

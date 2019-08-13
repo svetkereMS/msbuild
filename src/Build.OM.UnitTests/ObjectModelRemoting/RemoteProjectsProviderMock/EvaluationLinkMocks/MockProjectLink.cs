@@ -147,7 +147,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public override ICollection<ProjectItem> Items => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.Items);
 
-        public override ICollection<ProjectItem> ItemsIgnoringCondition => throw new NotImplementedException();
+        public override ICollection<ProjectItem> ItemsIgnoringCondition => this.Linker.ImportCollection<ProjectItem, MockProjectItemLinkRemoter>(this.Proxy.ItemsIgnoringCondition);
 
         public override IList<ResolvedImport> Imports
             => this.Proxy.Imports.ConvertCollection<ResolvedImport, RemotedResolvedImport>((a) => a.Import(this.Linker));

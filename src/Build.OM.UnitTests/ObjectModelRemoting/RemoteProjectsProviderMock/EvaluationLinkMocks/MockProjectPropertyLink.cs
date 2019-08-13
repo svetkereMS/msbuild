@@ -25,7 +25,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         ///  ProjectPropertyLink remoting
         public MockProjectLinkRemoter Project => this.OwningCollection.Export<Project, MockProjectLinkRemoter>(this.Source.Project);
-        public MockProjectRootElementLinkRemoter Xml => (MockProjectRootElementLinkRemoter)this.ExportElement(this.Source.Xml);
+        public MockProjectPropertyElementLinkRemoter Xml => (MockProjectPropertyElementLinkRemoter)this.ExportElement(this.Source.Xml);
         public string Name => this.Source.Name;
         public string EvaluatedIncludeEscaped => ProjectPropertyLink.GetEvaluatedValueEscaped(this.Source);
         public string UnevaluatedValue { get => this.Source.UnevaluatedValue; set=> this.Source.UnevaluatedValue = value; }
