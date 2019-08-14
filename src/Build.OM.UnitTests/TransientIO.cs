@@ -68,12 +68,13 @@ namespace Microsoft.Build.UnitTests
         {
             var absolute = GetAbsolutePath(path);
 
-            return absolute.Substring(this.RootFolder.Length);
+            return absolute.Substring(this.RootFolder.Length + 1);
         }
         public string GetAbsolutePath(string relative)
         {
             var tempRoot = this.RootFolder;
-            var absolute = Path.GetFullPath(Path.Combine(tempRoot, relative));
+
+            var absolute = Path.GetFullPath(Path.IsPathRooted(relative) ? relative : Path.Combine(tempRoot, relative));
             if (!IsControled(absolute))
             {
                 throw new ArgumentException(nameof(relative));
