@@ -88,6 +88,21 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(1, viewItems.Count);
             return which == ProjectType.View ? viewItems.First() : realItems.First();
         }
+
+        public ProjectProperty SetPropertyWithVerify(ProjectType where, string name, string unevaluatedValue)
+        {
+            var toAdd = this.GetProject(where);
+            var added = toAdd.SetProperty(name, unevaluatedValue);
+            Assert.NotNull(added);
+            Assert.Same(added, toAdd.GetProperty(name));
+            Assert.Equal(unevaluatedValue, added.UnevaluatedValue);
+
+            var view = this.View.GetProperty(name);
+            var real = this.Real.GetProperty(name);
+            ViewValidation.Verify(view, real, this);
+
+            return added;
+        }
     }
 
     internal static partial class ViewValidation
