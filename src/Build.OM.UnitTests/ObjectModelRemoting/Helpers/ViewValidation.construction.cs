@@ -13,6 +13,72 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Xml.Schema;
     using System.Collections;
 
+    internal class ProjectXmlPair
+    {
+        public ProjectXmlPair(ProjectPair pair) : this(pair.View.Xml, pair.Real.Xml) { }
+        public ProjectXmlPair(ProjectRootElement viewXml, ProjectRootElement realXml)
+        {
+            ViewValidation.VerifyLinkedNotNull(viewXml);
+            ViewValidation.VerifyNotLinkedNotNull(realXml);
+            this.ViewXml = viewXml;
+            this.RealXml = realXml;
+        }
+
+        public ProjectRootElement GetXml(ObjectType type) => type == ObjectType.Real ? this.RealXml : this.ViewXml;
+        public ProjectRootElement ViewXml { get; }
+        public ProjectRootElement RealXml { get; }
+
+
+        public T QuerySingleChildrenWithValidation<T>(ObjectType which, Func<T, bool> matcher)
+            where T : ProjectElement
+        {
+            var result = QueryChildrenWithValidation(which, matcher);
+            Assert.Equal(1, result.Count);
+            return result.FirstOrDefault();
+        }
+
+        public ICollection<T> QueryChildrenWithValidation<T>(ObjectType which, Func<T, bool> matcher, int expectedCount)
+            where T : ProjectElement
+        {
+            var result = QueryChildrenWithValidation(which, matcher);
+            Assert.Equal(expectedCount, result.Count);
+            return result;
+        }
+
+        public ICollection<T> QueryChildrenWithValidation<T>(ObjectType which, Func<T, bool> matcher)
+            where T : ProjectElement
+        {
+            List<T> viewResult = new List<T>();
+            List<T> realResult = new List<T>();
+            foreach ( var v in ViewXml.AllChildren)
+            {
+                if (v is T vt)
+                {
+                    if (matcher(vt))
+                    {
+                        viewResult.Add(vt);
+                    }
+                }
+            }
+
+            foreach (var r in RealXml.AllChildren)
+            {
+                if (r is T rt)
+                {
+                    if (matcher(rt))
+                    {
+                        realResult.Add(rt);
+                    }
+                }
+            }
+            // slow form viw VerifyFindType, since we dont know the T.
+            ViewValidation.Verify(viewResult, realResult);
+
+            return which == ObjectType.View ? viewResult : realResult;
+        }
+    }
+
+
     internal static partial class ViewValidation
     {
         public static void VerifySameLocationWithException(Func<ElementLocation> expectedGetter, Func<ElementLocation> actualGetter)

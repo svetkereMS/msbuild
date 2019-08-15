@@ -14,7 +14,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Collections;
     using Microsoft.Build.Framework;
 
-    internal enum ProjectType
+    internal enum ObjectType
     {
         Real = 1,
         View = 2
@@ -30,7 +30,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             this.Real = real;
         }
 
-        public Project GetProject(ProjectType type) => type == ProjectType.Real ? this.Real : this.View;
+        public Project GetProject(ObjectType type) => type == ObjectType.Real ? this.Real : this.View;
         public Project View { get; }
         public Project Real { get; }
 
@@ -40,7 +40,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(value, this.Real.GetPropertyValue(name));
         }
 
-        private ProjectItem VerifyAfterAddSingleItem(ProjectType where, ICollection<ProjectItem> added, IEnumerable<KeyValuePair<string, string>> metadata)
+        private ProjectItem VerifyAfterAddSingleItem(ObjectType where, ICollection<ProjectItem> added, IEnumerable<KeyValuePair<string, string>> metadata)
         {
             Assert.NotNull(added);
             Assert.Equal(1, added.Count);
@@ -64,21 +64,21 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             return result;
         }
 
-        public ProjectItem AddSingleItemWithVerify(ProjectType where, string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata = null)
+        public ProjectItem AddSingleItemWithVerify(ObjectType where, string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata = null)
         {
             var toAdd = this.GetProject(where);
             var added = (metadata == null) ? toAdd.AddItem(itemType, unevaluatedInclude) : toAdd.AddItem(itemType, unevaluatedInclude, metadata);
             return VerifyAfterAddSingleItem(where, added, metadata);
         }
 
-        public ProjectItem AddSingleItemFastWithVerify(ProjectType where, string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata = null)
+        public ProjectItem AddSingleItemFastWithVerify(ObjectType where, string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata = null)
         {
             var toAdd = this.GetProject(where);
             var added = (metadata == null) ? toAdd.AddItemFast(itemType, unevaluatedInclude) : toAdd.AddItemFast(itemType, unevaluatedInclude, metadata);
             return VerifyAfterAddSingleItem(where, added, metadata);
         }
 
-        public ProjectItem GetSingleItemWithVerify(ProjectType which, string evaluatedInclude)
+        public ProjectItem GetSingleItemWithVerify(ObjectType which, string evaluatedInclude)
         {
             var realItems = this.Real.GetItemsByEvaluatedInclude(evaluatedInclude);
             var viewItems = this.View.GetItemsByEvaluatedInclude(evaluatedInclude);
@@ -86,10 +86,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             ViewValidation.Verify(viewItems, realItems, ViewValidation.Verify, this);
             if (viewItems == null || viewItems.Count == 0) return null;
             Assert.Equal(1, viewItems.Count);
-            return which == ProjectType.View ? viewItems.First() : realItems.First();
+            return which == ObjectType.View ? viewItems.First() : realItems.First();
         }
 
-        public ProjectProperty SetPropertyWithVerify(ProjectType where, string name, string unevaluatedValue)
+        public ProjectProperty SetPropertyWithVerify(ObjectType where, string name, string unevaluatedValue)
         {
             var toAdd = this.GetProject(where);
             var added = toAdd.SetProperty(name, unevaluatedValue);

@@ -1935,6 +1935,7 @@ namespace Microsoft.Build.ObjectModelRemoting
     public abstract partial class ProjectTargetElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {
         protected ProjectTargetElementLink() { }
+        public abstract string Name { get; set; }
         public abstract string Returns { set; }
     }
     public abstract partial class ProjectTaskElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink

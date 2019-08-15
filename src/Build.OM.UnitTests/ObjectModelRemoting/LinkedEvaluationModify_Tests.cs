@@ -132,30 +132,30 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             /// test AddItems
 
             // add a new files in the view, ensure it is added correctly and also the real object will immediately reflect that add as well
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.View, "foo.cpp"));
-            var fooView = pair.AddSingleItemWithVerify(ProjectType.View, "cpp", "foo.cpp");
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.View, "foo.cpp"));
+            var fooView = pair.AddSingleItemWithVerify(ObjectType.View, "cpp", "foo.cpp");
 
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.View, "fooFast.cpp"));
-            var fooViewFast = pair.AddSingleItemFastWithVerify(ProjectType.View, "cpp", "fooFast.cpp");
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.View, "fooFast.cpp"));
+            var fooViewFast = pair.AddSingleItemFastWithVerify(ObjectType.View, "cpp", "fooFast.cpp");
 
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.View, "fooWithMetadata.cpp"));
-            var fooWithMetadataView = pair.AddSingleItemWithVerify(ProjectType.View, "cpp", "fooWithMetadata.cpp", testMedatada);
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.View, "fooWithMetadata.cpp"));
+            var fooWithMetadataView = pair.AddSingleItemWithVerify(ObjectType.View, "cpp", "fooWithMetadata.cpp", testMedatada);
 
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.View, "fooWithMetadataFast.cpp"));
-            var fooWithMetadataViewFast = pair.AddSingleItemWithVerify(ProjectType.View, "cpp", "fooWithMetadataFast.cpp", testMedatada);
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.View, "fooWithMetadataFast.cpp"));
+            var fooWithMetadataViewFast = pair.AddSingleItemWithVerify(ObjectType.View, "cpp", "fooWithMetadataFast.cpp", testMedatada);
 
             // add a new files in the real, ensure it is added correctly and also the view object will immediately reflect that add as well
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.Real, "bar.cpp"));
-            var barReal = pair.AddSingleItemWithVerify(ProjectType.Real, "cpp", "bar.cpp");
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.Real, "bar.cpp"));
+            var barReal = pair.AddSingleItemWithVerify(ObjectType.Real, "cpp", "bar.cpp");
 
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.Real, "barFast.cpp"));
-            var barRealFast = pair.AddSingleItemFastWithVerify(ProjectType.Real, "cpp", "barFast.cpp");
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.Real, "barFast.cpp"));
+            var barRealFast = pair.AddSingleItemFastWithVerify(ObjectType.Real, "cpp", "barFast.cpp");
 
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.Real, "barWithMetadata.cpp"));
-            var barWithMetadataReal = pair.AddSingleItemWithVerify(ProjectType.Real, "cpp", "barWithMetadata.cpp", testMedatada);
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.Real, "barWithMetadata.cpp"));
+            var barWithMetadataReal = pair.AddSingleItemWithVerify(ObjectType.Real, "cpp", "barWithMetadata.cpp", testMedatada);
 
-            Assert.Null(pair.GetSingleItemWithVerify(ProjectType.Real, "barWithMetadataFast.cpp"));
-            var barWithMetadataRealFast = pair.AddSingleItemWithVerify(ProjectType.Real, "cpp", "barWithMetadataFast.cpp", testMedatada);
+            Assert.Null(pair.GetSingleItemWithVerify(ObjectType.Real, "barWithMetadataFast.cpp"));
+            var barWithMetadataRealFast = pair.AddSingleItemWithVerify(ObjectType.Real, "cpp", "barWithMetadataFast.cpp", testMedatada);
 
 
             ViewValidation.Verify(pair);
@@ -164,8 +164,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             // remove single from view
             {
-                Assert.NotNull(pair.GetSingleItemWithVerify(ProjectType.View, "barWithMetadataFast.cpp"));
-                var barWithMetadataViewFast = pair.GetSingleItemWithVerify(ProjectType.View, "barWithMetadataFast.cpp");
+                Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadataFast.cpp"));
+                var barWithMetadataViewFast = pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadataFast.cpp");
                 Assert.NotNull(barWithMetadataViewFast);
 
                 ViewValidation.Verify(barWithMetadataViewFast, barWithMetadataRealFast, pair);
@@ -175,13 +175,13 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                    });
 
                 pair.View.RemoveItem(barWithMetadataViewFast);
-                Assert.Null(pair.GetSingleItemWithVerify(ProjectType.View, "barWithMetadataFast.cpp"));
+                Assert.Null(pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadataFast.cpp"));
             }
 
             // remove multiple from view
             {
-                Assert.NotNull(pair.GetSingleItemWithVerify(ProjectType.View, "fooWithMetadata.cpp"));
-                var barWithMetadataView = pair.GetSingleItemWithVerify(ProjectType.View, "barWithMetadata.cpp");
+                Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.View, "fooWithMetadata.cpp"));
+                var barWithMetadataView = pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadata.cpp");
                 Assert.NotNull(barWithMetadataView);
                 ViewValidation.Verify(barWithMetadataView, barWithMetadataReal, pair);
                 var toRemoveView = new List<ProjectItem>() { barWithMetadataView, fooWithMetadataView };
@@ -192,15 +192,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 });
 
                 pair.View.RemoveItems(toRemoveView);
-                Assert.Null(pair.GetSingleItemWithVerify(ProjectType.View, "fooWithMetadata.cpp"));
-                Assert.Null(pair.GetSingleItemWithVerify(ProjectType.View, "barWithMetadata.cpp"));
+                Assert.Null(pair.GetSingleItemWithVerify(ObjectType.View, "fooWithMetadata.cpp"));
+                Assert.Null(pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadata.cpp"));
             }
 
 
             // remove single from real
             {
-                Assert.NotNull(pair.GetSingleItemWithVerify(ProjectType.Real, "fooWithMetadataFast.cpp"));
-                var fooWithMetadataRealFast = pair.GetSingleItemWithVerify(ProjectType.Real, "fooWithMetadataFast.cpp");
+                Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.Real, "fooWithMetadataFast.cpp"));
+                var fooWithMetadataRealFast = pair.GetSingleItemWithVerify(ObjectType.Real, "fooWithMetadataFast.cpp");
                 Assert.NotNull(fooWithMetadataRealFast);
                 ViewValidation.Verify(fooWithMetadataViewFast, fooWithMetadataRealFast, pair);
 
@@ -213,13 +213,13 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
 
                 pair.Real.RemoveItem(fooWithMetadataRealFast);
-                Assert.Null(pair.GetSingleItemWithVerify(ProjectType.Real, "fooWithMetadataFast.cpp"));
+                Assert.Null(pair.GetSingleItemWithVerify(ObjectType.Real, "fooWithMetadataFast.cpp"));
             }
 
             // remove multiple from real
             {
-                Assert.NotNull(pair.GetSingleItemWithVerify(ProjectType.Real, "barFast.cpp"));
-                var fooRealFast = pair.GetSingleItemWithVerify(ProjectType.Real, "fooFast.cpp");
+                Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.Real, "barFast.cpp"));
+                var fooRealFast = pair.GetSingleItemWithVerify(ObjectType.Real, "fooFast.cpp");
                 Assert.NotNull(fooRealFast);
                 ViewValidation.Verify(fooViewFast, fooRealFast, pair);
                 var toRemoveReal = new List<ProjectItem>() { fooRealFast, barRealFast};
@@ -230,13 +230,13 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 });
 
                 pair.Real.RemoveItems(toRemoveReal);
-                Assert.Null(pair.GetSingleItemWithVerify(ProjectType.Real, "fooFast.cpp"));
-                Assert.Null(pair.GetSingleItemWithVerify(ProjectType.Real, "barFast.cpp"));
+                Assert.Null(pair.GetSingleItemWithVerify(ObjectType.Real, "fooFast.cpp"));
+                Assert.Null(pair.GetSingleItemWithVerify(ObjectType.Real, "barFast.cpp"));
             }
 
 
             // Check metadata modify
-            var fooReal = pair.GetSingleItemWithVerify(ProjectType.Real, "foo.cpp");
+            var fooReal = pair.GetSingleItemWithVerify(ObjectType.Real, "foo.cpp");
             ViewValidation.Verify(fooView, fooReal, pair);
 
             Assert.False(fooView.HasMetadata("xx"));
@@ -356,7 +356,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             pair.ValidatePropertyValue("fooProp", string.Empty);
 
-            var fooView = pair.SetPropertyWithVerify(ProjectType.View, "fooProp", "fooValue$(xxx)");
+            var fooView = pair.SetPropertyWithVerify(ObjectType.View, "fooProp", "fooValue$(xxx)");
             var fooReal = pair.Real.GetProperty("fooProp");
 
             Assert.Equal("fooValue", fooView.EvaluatedValue);
@@ -385,6 +385,5 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.True(pair.View.RemoveProperty(fooView));
             Assert.Null(pair.View.GetProperty("fooProp"));
         }
-
     }
 }

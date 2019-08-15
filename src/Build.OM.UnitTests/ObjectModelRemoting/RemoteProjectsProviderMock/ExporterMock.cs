@@ -5,9 +5,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
     using System;
     using System.Collections.Generic;
-    using System.Data;
-    using System.Net.NetworkInformation;
+    using System.IO;
     using System.Threading;
+    using System.Xml;
     using Microsoft.Build.Construction;
     using Microsoft.Build.Evaluation;
     using Microsoft.Build.Framework;
@@ -160,6 +160,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public Project LoadProject(string path) =>  this.Collection.LoadProject(path);
         public Project LoadProjectIgnoreMissingImports(string path) => LoadProjectWithSettings(path, ProjectLoadSettings.IgnoreMissingImports);
         public Project LoadProjectWithSettings(string path, ProjectLoadSettings settings) => new Project(path, null, null, this.Collection, settings);
+
+
+        public Project LoadInMemoryWithSettings(string content, ProjectLoadSettings settings = ProjectLoadSettings.Default)
+        {
+            content = ObjectModelHelpers.CleanupFileContents(content);
+            ProjectRootElement xml = ProjectRootElement.Create(XmlReader.Create(new StringReader(content)));
+            Project project = new Project(xml, null, null, this.Collection, settings);
+            return project;
+        }
 
         public ConnectedProjectCollections LinkedCollections { get; }
 

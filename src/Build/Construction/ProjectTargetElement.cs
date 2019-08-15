@@ -83,15 +83,22 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
+                if (Link != null) { return TargetLink.Name; }
+
                 // No thread-safety lock required here because many reader threads would set the same value to the field.
                 if (_name != null) return _name;
                 string unescapedValue = EscapingUtilities.UnescapeAll(GetAttributeValue(XMakeAttributes.name));
-                return Link != null ? unescapedValue : (_name = unescapedValue);
+                return (_name = unescapedValue);
             }
 
             set
             {
                 ErrorUtilities.VerifyThrowArgumentLength(value, nameof(value));
+                if (Link != null)
+                {
+                    TargetLink.Name = value;
+                    return;
+                }
 
                 string unescapedValue = EscapingUtilities.UnescapeAll(value);
 
@@ -102,10 +109,7 @@ namespace Microsoft.Build.Construction
                 }
 
                 SetOrRemoveAttribute(XMakeAttributes.name, unescapedValue, "Set target Name {0}", value);
-                if (Link == null)
-                {
-                    _name = unescapedValue;
-                }
+                _name = unescapedValue;
             }
         }
 

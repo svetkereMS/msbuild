@@ -22,6 +22,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         }
 
 
+        public string Name { get => this.TargetXml.Name; set => this.TargetXml.Name = value; }
         public string Returns { set => this.TargetXml.Returns = value; }
     }
 
@@ -41,6 +42,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         MockProjectElementContainerLinkRemoter IProjectElementContainerLinkHelper.ContainerProxy => this.Proxy;
 
         // ProjectTargetElementLink -----
+        public override string Name { get => this.Proxy.Name; set => this.Proxy.Name = value; }
         public override string Returns { set => this.Proxy.Returns = value; }
         // ----------------------------
 

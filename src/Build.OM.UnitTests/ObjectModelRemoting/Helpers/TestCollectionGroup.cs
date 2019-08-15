@@ -6,6 +6,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System;
     using System.Collections.Generic;
     using System.Runtime.CompilerServices;
+    using Microsoft.Build.Evaluation;
+    using Xunit;
 
     public class TestCollectionGroup : IDisposable
     {
@@ -186,6 +188,21 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         protected TransientIO ImmutableDisk { get; }
         public IReadOnlyList<string> StdProjectFiles { get; }
 
+        private IReadOnlyDictionary<ProjectCollectionLinker, HashSet<Project>> ImmutableProjects { get; set; }
+        protected void TakeSnaphot()
+        {
+            Assert.Null(this.ImmutableProjects);
+            var result = new Dictionary<ProjectCollectionLinker, HashSet<Project>>();
+            this.Local.Importing = false;
+            result.Add(this.Local, new HashSet<Project>(this.Local.Collection.LoadedProjects));
+            foreach (var r in this.Remote)
+            {
+                r.Importing = false;
+                result.Add(r, new HashSet<Project>(r.Collection.LoadedProjects));
+            }
+
+            this.ImmutableProjects = result;
+        }
 
         public TestCollectionGroup(int remoteCount, int stdFilesCount)
         {
@@ -212,14 +229,37 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             this.StdProjectFiles = stdFiles;
         }
 
+        private void Clear(ProjectCollectionLinker linker)
+        {
+            linker.Importing = false;
+            HashSet<Project> toKeep = null;
+            this.ImmutableProjects?.TryGetValue(linker, out toKeep);
+            if (toKeep == null)
+            {
+                linker.Collection.UnloadAllProjects();
+            }
+            else
+            {
+                var toUnload = new List<Project>();
+                foreach (var p in linker.Collection.LoadedProjects)
+                {
+                    if (!toKeep.Contains(p))
+                        toUnload.Add(p);
+                }
+
+                foreach (var p in toUnload)
+                {
+                    linker.Collection.UnloadProject(p);
+                    linker.Collection.UnloadProject(p.Xml);
+                }
+            }
+        }
         public void Clear()
         {
-            this.Local.Importing = false;
-            this.Local.Collection.UnloadAllProjects();
+            this.Clear(this.Local);
             foreach (var remote in this.Remote)
             {
-                remote.Importing = false;
-                remote.Collection.UnloadAllProjects();
+                this.Clear(remote);
             }
 
             this.Group.ClearAllRemotes();

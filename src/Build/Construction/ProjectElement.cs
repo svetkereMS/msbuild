@@ -50,7 +50,6 @@ namespace Microsoft.Build.Construction
             ErrorUtilities.VerifyThrowArgumentNull(link, nameof(link));
 
             _xmlSource = link;
-            _parent = link.Parent;
         }
 
         /// <summary>
@@ -150,6 +149,8 @@ namespace Microsoft.Build.Construction
             [DebuggerStepThrough]
             get
             {
+                if (this.Link != null) { return this.Link.Parent; }
+
                 if (_parent is WrapperForProjectRootElement)
                 {
                     // We hijacked the field to store the owning PRE. This element is actually unparented.

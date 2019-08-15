@@ -12,6 +12,11 @@ namespace Microsoft.Build.ObjectModelRemoting
     public abstract class ProjectTargetElementLink : ProjectElementContainerLink
     {
         /// <summary>
+        /// Access to remote <see cref="ProjectTargetElement.Name"/>.
+        /// </summary>
+        public abstract string Name { get; set; }
+
+        /// <summary>
         /// Access to remote <see cref="ProjectTargetElement.Returns"/>.
         /// </summary>
         public abstract string Returns { set; }

@@ -107,8 +107,10 @@ namespace Microsoft.Build.UnitTests
 
         public void Clear()
         {
-            if (this.root != null)
+            if (this.root != null && Directory.Exists(this.root.FullName))
             {
+                // Note: FileUtilities.DeleteDirectoryNoThrow will be very slow if the directory does not exists. (it will retry with timeout in this case for ~0.5 sec).
+                // not sure if that was intentional, so have not fixed it there but instead we check exist here.
                 FileUtilities.DeleteDirectoryNoThrow(this.root.FullName, true);
             }
 
