@@ -13,9 +13,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                     <Project xmlns='msbuildnamespace' ToolsVersion='2.0' InitialTargets='it' DefaultTargets='dt'>
                         <PropertyGroup Condition=""'$(Configuration)'=='Foo'"">
                             <p>v1</p>
+                            <gpt1>Foo$(gp1)</gpt1>
                         </PropertyGroup>
                         <PropertyGroup Condition=""'$(Configuration)'!='Foo'"">
                             <p>v2</p>
+                            <gpt1>NotFoo$(gp1)</gpt1>
                         </PropertyGroup>
                         <PropertyGroup>
                             <p2>X$(p)</p2>
