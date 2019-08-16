@@ -40,7 +40,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Same((object)this.Real, (object)other.Real);
         }
 
-
         public void VerifySetter(string newValue, Func<T, string> getter, Action<T, string> setter)
         {
             var newValue1 = newValue.Ver(1);

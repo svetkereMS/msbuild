@@ -17,39 +17,97 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         where T : ProjectElement
     {
         public ElementLinkPair(T view, T real) : base(view, real) { }
-    }
 
-    internal class ProjectXmlPair : ElementLinkPair<ProjectRootElement>
-    {
-        public ProjectXmlPair(ProjectPair pair) : base(pair.View.Xml, pair.Real.Xml) { }
-        public ProjectXmlPair(ProjectRootElement viewXml, ProjectRootElement realXml) : base(viewXml, realXml) { }
 
-        public ElementLinkPair<T> QuerySingleChildrenWithValidation<T>(Func<T, bool> matcher)
-            where T : ProjectElement
+        public ElementLinkPair<CT> AddNewChildrenWithVerify<CT>(ObjectType where, string id, Func<T, string, CT> adder, Func<CT, string, bool> matcher)
+            where CT : ProjectElement
         {
-            var result = QueryChildrenWithValidation(matcher);
-            Assert.Equal(1, result.Count);
-            return result.FirstOrDefault();
+
+            var c1Where = adder(this.Get(where), id);
+            Assert.NotNull(c1Where);
+
+            var c1 = this.QuerySingleChildrenWithValidation<CT>((t) => matcher(t, id));
+            Assert.Same(c1Where, c1.Get(where));
+
+            return c1;
         }
 
-        public ICollection<ElementLinkPair<T>> QueryChildrenWithValidation<T>(Func<T, bool> matcher, int expectedCount)
-            where T : ProjectElement
+        public void Add2NewChildrenWithVerify<CT>(string id, Func<T, string, CT> adder, Func<CT, string, bool> matcher, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
+            where CT : ProjectElement
+        {
+            c1 = AddNewChildrenWithVerify(ObjectType.View, id.Ver(1), adder, matcher);
+            c2 = AddNewChildrenWithVerify(ObjectType.Real, id.Ver(2), adder, matcher);
+        }
+
+        public ElementLinkPair<CT> AddNewNamedChildrenWithVerify<CT>(ObjectType where, string name, Func<T, string, CT> adder)
+            where CT : ProjectElement
+        {
+
+            var c1Where = adder(this.Get(where), name);
+            Assert.NotNull(c1Where);
+
+            var c1 = this.QuerySingleChildrenWithValidation<CT>((t) => string.Equals(t.ElementName, name));
+            Assert.Same(c1Where, c1.Get(where));
+
+            return c1;
+        }
+
+
+        public ElementLinkPair<CT> AddNewLabaledChildrenWithVerify<CT>(ObjectType where, string label, Func<T, CT> adder)
+            where CT : ProjectElement
+        {
+
+            var c1Where = adder(this.Get(where));
+            Assert.NotNull(c1Where);
+            c1Where.Label = label;
+
+            var c1 = this.QuerySingleChildrenWithValidation<CT>((t) => string.Equals(t.Label, label));
+            Assert.Same(c1Where, c1.Get(where));
+
+            return c1;
+        }
+
+
+        public void Add2NewNamedChildrenWithVerify<CT>(string name1, string name2, Func<T, string, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
+            where CT : ProjectElement
+        {
+            c1 = AddNewNamedChildrenWithVerify(ObjectType.View, name1, adder);
+            c2 = AddNewNamedChildrenWithVerify(ObjectType.Real, name2, adder);
+        }
+
+        public void Add2NewLabaledChildrenWithVerify<CT>(string label1, string label2, Func<T, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
+            where CT : ProjectElement
+        {
+            c1 = AddNewLabaledChildrenWithVerify(ObjectType.View, label1, adder);
+            c2 = AddNewLabaledChildrenWithVerify(ObjectType.Real, label2, adder);
+        }
+
+        public ICollection<ElementLinkPair<CT>> QueryChildrenWithValidation<CT>(Func<CT, bool> matcher, int expectedCount)
+            where CT : ProjectElement
         {
             var result = QueryChildrenWithValidation(matcher);
             Assert.Equal(expectedCount, result.Count);
             return result;
         }
 
-        public ICollection<ElementLinkPair<T>> QueryChildrenWithValidation<T>(Func<T, bool> matcher)
-            where T : ProjectElement
+        public ICollection<ElementLinkPair<CT>> QueryChildrenWithValidation<CT>(Func<T, IEnumerable> getter, Func<CT, bool> matcher, int expectedCount)
+            where CT : ProjectElement
         {
-            var viewResult = new List<T>();
-            var realResult = new List<T>();
-            var finalResult = new List<ElementLinkPair<T>>();
+            var result = QueryChildrenWithValidation(getter, matcher);
+            Assert.Equal(expectedCount, result.Count);
+            return result;
+        }
 
-            foreach ( var v in View.AllChildren)
+        public ICollection<ElementLinkPair<CT>> QueryChildrenWithValidation<CT>(Func<T,IEnumerable> getter,  Func<CT, bool> matcher)
+            where CT : ProjectElement
+        {
+            var viewResult = new List<CT>();
+            var realResult = new List<CT>();
+            var finalResult = new List<ElementLinkPair<CT>>();
+
+            foreach (var v in getter(this.View))
             {
-                if (v is T vt)
+                if (v is CT vt)
                 {
                     if (matcher(vt))
                     {
@@ -58,9 +116,9 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 }
             }
 
-            foreach (var r in Real.AllChildren)
+            foreach (var r in getter(this.Real))
             {
-                if (r is T rt)
+                if (r is CT rt)
                 {
                     if (matcher(rt))
                     {
@@ -73,11 +131,40 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             for (int i = 0; i < viewResult.Count; i++)
             {
-                finalResult.Add(new ElementLinkPair<T>(viewResult[i], realResult[i]));
+                finalResult.Add(new ElementLinkPair<CT>(viewResult[i], realResult[i]));
             }
 
             return finalResult;
         }
+
+        public ICollection<ElementLinkPair<CT>> QueryChildrenWithValidation<CT>(Func<CT, bool> matcher)
+            where CT : ProjectElement
+        {
+            Assert.True(this.View is ProjectElementContainer);
+            Assert.True(this.Real is ProjectElementContainer);
+
+            return QueryChildrenWithValidation((t) => (t as ProjectElementContainer).AllChildren, matcher);
+        }
+
+        public ElementLinkPair<CT> QuerySingleChildrenWithValidation<CT>(Func<CT, bool> matcher)
+            where CT : ProjectElement
+        {
+            var result = QueryChildrenWithValidation(matcher, 1);
+            return result.FirstOrDefault();
+        }
+
+        public ElementLinkPair<CT> QuerySingleChildrenWithValidation<CT>(Func<T, IEnumerable> getter, Func<CT, bool> matcher)
+            where CT : ProjectElement
+        {
+            var result = QueryChildrenWithValidation(getter, matcher, 1);
+            return result.FirstOrDefault();
+        }
+    }
+
+    internal class ProjectXmlPair : ElementLinkPair<ProjectRootElement>
+    {
+        public ProjectXmlPair(ProjectPair pair) : base(pair.View.Xml, pair.Real.Xml) { }
+        public ProjectXmlPair(ProjectRootElement viewXml, ProjectRootElement realXml) : base(viewXml, realXml) { }
     }
 
 

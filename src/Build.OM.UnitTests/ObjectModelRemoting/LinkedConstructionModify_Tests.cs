@@ -9,6 +9,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Collections.Immutable;
     using System.IO;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using Microsoft.Build.Construction;
@@ -74,8 +75,12 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             return new ProjectPair(newView, newReal);
         }
 
+        // validates:
+        // ProjectTargetElement
+        // ProjectTaskElement
+        // ProjectOutputElement
         [Fact]
-        public void ProjectTargetAndTaskElementsModify()
+        public void ProjectTargetAndRelatedModify()
         {
             var pair = GetNewInMemoryProject("temp.prj");
             var xmlPair = new ProjectXmlPair(pair);
@@ -91,29 +96,33 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Same(newTarget2View, newTarget2.View);
 
 
-            // embeded ProjectTaskElement validation.
             // add task to target
             const string NewTaskName = "NewTaskName";
-            var newTaskView = newTarget.View.AddTask(NewTaskName);
-            var newTask = xmlPair.QuerySingleChildrenWithValidation<ProjectTaskElement>((t) => string.Equals(t.Name, NewTaskName));
-            Assert.Same(newTaskView, newTask.View);
+            newTarget.Add2NewNamedChildrenWithVerify<ProjectTaskElement>(NewTaskName, NewTaskName.Ver(2), (t, n) => t.AddTask(n), out var newTask, out var newTask2);
 
-            // Add ItemGroup
+            // ProjectTaskElement validation (embedded here since task are only accessible from targets)
+            const string NewOutputItem = "NewOutputItem";
+            newTask.Add2NewChildrenWithVerify<ProjectOutputElement>(NewOutputItem, (t, n) => t.AddOutputItem(n, "CPP"), (oi, n) => oi.TaskParameter == n, out var newOutputItem1, out var newOutputItem2);
+            Assert.True(newOutputItem1.View.IsOutputItem);
+            Assert.False(newOutputItem1.View.IsOutputProperty);
+
+
+            const string NewOutputItemWithConfig = "NewOutputItemCfg";
+            newTask.Add2NewChildrenWithVerify<ProjectOutputElement>(NewOutputItemWithConfig, (t, n) => t.AddOutputItem(n, "source", "'Configuration'='Foo'"), (oi, n) => oi.TaskParameter == n, out var newOutputItemWithConfig1, out var newOutputWithConfig2);
+            Assert.True(newOutputItemWithConfig1.View.IsOutputItem);
+            Assert.False(newOutputItemWithConfig1.View.IsOutputProperty);
+
+
+
+
+            // Add ItemGroup2
             const string NewTargetItemGroup = "NewTargetItemGroup";
+            newTarget.Add2NewLabaledChildrenWithVerify<ProjectItemGroupElement>(NewTargetItemGroup, NewTargetItemGroup.Ver(2), (t) => t.AddItemGroup(), out var newItemGroup1, out var newItemGroup2);
 
-            var newItemGroup1View = newTarget.View.AddItemGroup();
-            Assert.NotNull(newItemGroup1View);
-            newItemGroup1View.Label = NewTargetItemGroup.Ver(1);
+            // Add property group
+            const string NewPropertyGroup = "NewPropertyGroup";
+            newTarget.Add2NewLabaledChildrenWithVerify<ProjectPropertyGroupElement>(NewPropertyGroup, NewPropertyGroup.Ver(2), (t) => t.AddPropertyGroup(), out var newPropertyGroup1, out var newPropertyGroup2);
 
-            var newItemGroup2Real = newTarget.Real.AddItemGroup();
-            Assert.NotNull(newItemGroup2Real);
-            newItemGroup2Real.Label = NewTargetItemGroup.Ver(2);
-
-            var newItemGroup1 = xmlPair.QuerySingleChildrenWithValidation<ProjectItemGroupElement>((t) => string.Equals(t.Label, NewTargetItemGroup.Ver(1)));
-            var newItemGroup2 = xmlPair.QuerySingleChildrenWithValidation<ProjectItemGroupElement>((t) => string.Equals(t.Label, NewTargetItemGroup.Ver(2)));
-
-            Assert.Same(newItemGroup1View, newItemGroup1.View);
-            Assert.Same(newItemGroup2Real, newItemGroup2.Real);
 
             // string setters
             newTarget.VerifySetter("newBeforeTargets", (t) => t.BeforeTargets, (t, v) => t.BeforeTargets = v);
