@@ -14,25 +14,12 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Collections;
     using Microsoft.Build.Framework;
 
-    internal enum ObjectType
-    {
-        Real = 1,
-        View = 2
-    }
-
-    internal class ProjectPair
+    internal class ProjectPair : LinkPair<Project>
     {
         public ProjectPair(Project view, Project real)
+            : base(view, real)
         {
-            ViewValidation.VerifyLinkedNotNull(view);
-            ViewValidation.VerifyNotLinkedNotNull(real);
-            this.View = view;
-            this.Real = real;
         }
-
-        public Project GetProject(ObjectType type) => type == ObjectType.Real ? this.Real : this.View;
-        public Project View { get; }
-        public Project Real { get; }
 
         public void ValidatePropertyValue(string name, string value)
         {
@@ -66,14 +53,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public ProjectItem AddSingleItemWithVerify(ObjectType where, string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata = null)
         {
-            var toAdd = this.GetProject(where);
+            var toAdd = this.Get(where);
             var added = (metadata == null) ? toAdd.AddItem(itemType, unevaluatedInclude) : toAdd.AddItem(itemType, unevaluatedInclude, metadata);
             return VerifyAfterAddSingleItem(where, added, metadata);
         }
 
         public ProjectItem AddSingleItemFastWithVerify(ObjectType where, string itemType, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata = null)
         {
-            var toAdd = this.GetProject(where);
+            var toAdd = this.Get(where);
             var added = (metadata == null) ? toAdd.AddItemFast(itemType, unevaluatedInclude) : toAdd.AddItemFast(itemType, unevaluatedInclude, metadata);
             return VerifyAfterAddSingleItem(where, added, metadata);
         }
@@ -91,7 +78,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public ProjectProperty SetPropertyWithVerify(ObjectType where, string name, string unevaluatedValue)
         {
-            var toAdd = this.GetProject(where);
+            var toAdd = this.Get(where);
             var added = toAdd.SetProperty(name, unevaluatedValue);
             Assert.NotNull(added);
             Assert.Same(added, toAdd.GetProperty(name));
@@ -107,6 +94,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal static partial class ViewValidation
     {
+        public static void Verify(ProjectProperty view, ProjectProperty real) => Verify(view, real, null);
         public static void Verify(ProjectProperty view, ProjectProperty real, ProjectPair pair = null)
         {
             if (view == null && real == null) return;
@@ -134,7 +122,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Verify(view.Predecessor, real.Predecessor, pair);
         }
 
-        public static void Verify(ProjectMetadata view, ProjectMetadata real, ProjectPair pair = null)
+        public static void Verify(ProjectMetadata view, ProjectMetadata real) => Verify(view, real, null);
+        public static void Verify(ProjectMetadata view, ProjectMetadata real, ProjectPair pair)
         {
             if (view == null && real == null) return;
             VerifyLinkedNotNull(view);
@@ -162,7 +151,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Verify(view.Predecessor, real.Predecessor, pair);
         }
 
-        public static void Verify(ProjectItemDefinition view, ProjectItemDefinition real, ProjectPair pair = null)
+        public static void Verify(ProjectItemDefinition view, ProjectItemDefinition real) => Verify(view, real, null);
+        public static void Verify(ProjectItemDefinition view, ProjectItemDefinition real, ProjectPair pair)
         {
             if (view == null && real == null) return;
             VerifyLinkedNotNull(view);
@@ -199,7 +189,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             }
         }
 
-        public static void Verify(ProjectItem view, ProjectItem real, ProjectPair pair = null)
+        public static void Verify(ProjectItem view, ProjectItem real) => Verify(view, real, null);
+        public static void Verify(ProjectItem view, ProjectItem real, ProjectPair pair)
         {
             if (view == null && real == null) return;
             VerifyLinkedNotNull(view);
@@ -294,7 +285,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var pair = new ProjectPair(view, real);
             Verify(pair);
         }
-
 
         public static void Verify(ProjectPair pair)
         {

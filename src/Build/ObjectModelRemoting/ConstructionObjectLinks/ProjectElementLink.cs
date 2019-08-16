@@ -94,7 +94,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         /// <summary>
         /// Required to implement Attribute access for remote element.
         /// </summary>
-        public abstract void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param);
+        public abstract void SetOrRemoveAttribute(string name, string value, bool clearAttributeCache, string reason, string param);
 
         /// <summary>
         /// Facilitate remoting to remote <see cref="ProjectElement.CopyFrom"/>.
@@ -113,7 +113,7 @@ namespace Microsoft.Build.ObjectModelRemoting
         public static void SetExpressedAsAttribute(ProjectElement xml, bool value) => xml.ExpressedAsAttribute = value;
         public static ElementLocation GetAttributeLocation(ProjectElement xml, string attributeName) => xml.GetAttributeLocation(attributeName);
         public static string GetAttributeValue(ProjectElement xml, string attributeName, bool nullIfNotExists) => xml.GetAttributeValue(attributeName, nullIfNotExists);
-        public static void SetOrRemoveAttribute(ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param) => xml.SetOrRemoveAttribute(name, value, reason, param);
+        public static void SetOrRemoveAttribute(ProjectElement xml, string name, string value, bool clearAttributeCache, string reason, string param) => xml.SetOrRemoveAttributeForLink(name, value, clearAttributeCache, reason, param);
         public static void MarkDirty(ProjectElement xml, string reason, string param) => xml.MarkDirty(reason, param);
         public static ProjectElement CreateNewInstance(ProjectElement xml, ProjectRootElement owner) =>  ProjectElement.CreateNewInstance(xml, owner);
     }

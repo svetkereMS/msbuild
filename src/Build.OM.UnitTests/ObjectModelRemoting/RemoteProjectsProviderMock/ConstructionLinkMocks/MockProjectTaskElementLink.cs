@@ -77,7 +77,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public override ProjectElement CreateNewInstance(ProjectRootElement owner) => EImpl.CreateNewInstance(owner);
         public override ElementLocation GetAttributeLocation(string attributeName) => EImpl.GetAttributeLocation(attributeName);
         public override string GetAttributeValue(string attributeName, bool nullIfNotExists) => EImpl.GetAttributeValue(attributeName, nullIfNotExists);
-        public override void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param) => EImpl.SetOrRemoveAttribute(name, value, allowSettingEmptyAttributes, reason, param);
+        public override void SetOrRemoveAttribute(string name, string value, bool clearAttributeCache, string reason, string param) => EImpl.SetOrRemoveAttribute(name, value, clearAttributeCache, reason, param);
         #endregion
 
         #region ProjectElementContainer link redirectors

@@ -82,20 +82,74 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             // create new target
             const string NewTargetName = "NewTargetName";
-            var newTargetView = xmlPair.ViewXml.AddTarget(NewTargetName);
+            var newTargetView = xmlPair.View.AddTarget(NewTargetName);
+            var newTarget = xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName));
+            Assert.Same(newTargetView, newTarget.View);
 
-            Assert.Same(newTargetView, xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>(ObjectType.View, (t) => string.Equals(t.Name, NewTargetName)));
+            var newTarget2View = xmlPair.View.AddTarget(NewTargetName.Ver(2));
+            var newTarget2 = xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName.Ver(2)));
+            Assert.Same(newTarget2View, newTarget2.View);
 
+
+            // embeded ProjectTaskElement validation.
             // add task to target
             const string NewTaskName = "NewTaskName";
-            var newTaskView = newTargetView.AddTask(NewTaskName);
-            Assert.Same(newTaskView, xmlPair.QuerySingleChildrenWithValidation<ProjectTaskElement>(ObjectType.View, (t) => string.Equals(t.Name, NewTaskName)));
+            var newTaskView = newTarget.View.AddTask(NewTaskName);
+            var newTask = xmlPair.QuerySingleChildrenWithValidation<ProjectTaskElement>((t) => string.Equals(t.Name, NewTaskName));
+            Assert.Same(newTaskView, newTask.View);
 
-            // rename target
+            // Add ItemGroup
+            const string NewTargetItemGroup = "NewTargetItemGroup";
+
+            var newItemGroup1View = newTarget.View.AddItemGroup();
+            Assert.NotNull(newItemGroup1View);
+            newItemGroup1View.Label = NewTargetItemGroup.Ver(1);
+
+            var newItemGroup2Real = newTarget.Real.AddItemGroup();
+            Assert.NotNull(newItemGroup2Real);
+            newItemGroup2Real.Label = NewTargetItemGroup.Ver(2);
+
+            var newItemGroup1 = xmlPair.QuerySingleChildrenWithValidation<ProjectItemGroupElement>((t) => string.Equals(t.Label, NewTargetItemGroup.Ver(1)));
+            var newItemGroup2 = xmlPair.QuerySingleChildrenWithValidation<ProjectItemGroupElement>((t) => string.Equals(t.Label, NewTargetItemGroup.Ver(2)));
+
+            Assert.Same(newItemGroup1View, newItemGroup1.View);
+            Assert.Same(newItemGroup2Real, newItemGroup2.Real);
+
+            // string setters
+            newTarget.VerifySetter("newBeforeTargets", (t) => t.BeforeTargets, (t, v) => t.BeforeTargets = v);
+            newTarget.VerifySetter("newDependsOnTargets", (t) => t.DependsOnTargets, (t, v) => t.DependsOnTargets = v);
+            newTarget.VerifySetter("newAfterTargets", (t) => t.AfterTargets, (t, v) => t.AfterTargets = v);
+            newTarget.VerifySetter("newReturns", (t) => t.Returns, (t, v) => t.Returns = v);
+            newTarget.VerifySetter("newInputs", (t) => t.Inputs, (t, v) => t.Inputs = v);
+            newTarget.VerifySetter("newOutputs", (t) => t.Outputs, (t, v) => t.Outputs = v);
+            newTarget.VerifySetter("newKeepDuplicateOutputs", (t) => t.KeepDuplicateOutputs, (t, v) => t.KeepDuplicateOutputs = v);
+
+
+            newTarget.VerifySetter("'Configuration' == 'Foo'", (t) => t.Condition, (t, v) => t.Condition = v);
+            newTarget.VerifySetter("newLabel", (t) => t.Label, (t, v) => t.Label= v);
+            
+            // rename target. First validate we do not change identity of the view
             const string NewTargetRenamed = "NewTargetRenamed";
-            newTargetView.Name = NewTargetRenamed;
-            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>(ObjectType.View, (t) => string.Equals(t.Name, NewTargetName)));
-            Assert.Same(newTargetView, xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>(ObjectType.View, (t) => string.Equals(t.Name, NewTargetRenamed)));
+            newTarget.View.Name = NewTargetRenamed;
+            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName)));
+            newTarget.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed)));
+
+            newTarget.Real.Name = NewTargetRenamed.Ver(2);
+            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed)));
+            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName)));
+
+            newTarget.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed.Ver(2))));
+
+            // this will rename back, as well as check the reqular way (after we confirmed the view identity dont change on rename).
+            newTarget.VerifySetter(NewTargetName, (t) => t.Name, (t, v) => t.Name = v);
+
+            // check everything before start removing
+            newTarget.Verify();
+
+
+
+
+
 
         }
     }

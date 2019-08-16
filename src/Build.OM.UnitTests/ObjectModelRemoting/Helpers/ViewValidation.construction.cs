@@ -13,44 +13,41 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     using System.Xml.Schema;
     using System.Collections;
 
-    internal class ProjectXmlPair
+    internal class ElementLinkPair<T> : LinkPair<T>
+        where T : ProjectElement
     {
-        public ProjectXmlPair(ProjectPair pair) : this(pair.View.Xml, pair.Real.Xml) { }
-        public ProjectXmlPair(ProjectRootElement viewXml, ProjectRootElement realXml)
-        {
-            ViewValidation.VerifyLinkedNotNull(viewXml);
-            ViewValidation.VerifyNotLinkedNotNull(realXml);
-            this.ViewXml = viewXml;
-            this.RealXml = realXml;
-        }
+        public ElementLinkPair(T view, T real) : base(view, real) { }
+    }
 
-        public ProjectRootElement GetXml(ObjectType type) => type == ObjectType.Real ? this.RealXml : this.ViewXml;
-        public ProjectRootElement ViewXml { get; }
-        public ProjectRootElement RealXml { get; }
+    internal class ProjectXmlPair : ElementLinkPair<ProjectRootElement>
+    {
+        public ProjectXmlPair(ProjectPair pair) : base(pair.View.Xml, pair.Real.Xml) { }
+        public ProjectXmlPair(ProjectRootElement viewXml, ProjectRootElement realXml) : base(viewXml, realXml) { }
 
-
-        public T QuerySingleChildrenWithValidation<T>(ObjectType which, Func<T, bool> matcher)
+        public ElementLinkPair<T> QuerySingleChildrenWithValidation<T>(Func<T, bool> matcher)
             where T : ProjectElement
         {
-            var result = QueryChildrenWithValidation(which, matcher);
+            var result = QueryChildrenWithValidation(matcher);
             Assert.Equal(1, result.Count);
             return result.FirstOrDefault();
         }
 
-        public ICollection<T> QueryChildrenWithValidation<T>(ObjectType which, Func<T, bool> matcher, int expectedCount)
+        public ICollection<ElementLinkPair<T>> QueryChildrenWithValidation<T>(Func<T, bool> matcher, int expectedCount)
             where T : ProjectElement
         {
-            var result = QueryChildrenWithValidation(which, matcher);
+            var result = QueryChildrenWithValidation(matcher);
             Assert.Equal(expectedCount, result.Count);
             return result;
         }
 
-        public ICollection<T> QueryChildrenWithValidation<T>(ObjectType which, Func<T, bool> matcher)
+        public ICollection<ElementLinkPair<T>> QueryChildrenWithValidation<T>(Func<T, bool> matcher)
             where T : ProjectElement
         {
-            List<T> viewResult = new List<T>();
-            List<T> realResult = new List<T>();
-            foreach ( var v in ViewXml.AllChildren)
+            var viewResult = new List<T>();
+            var realResult = new List<T>();
+            var finalResult = new List<ElementLinkPair<T>>();
+
+            foreach ( var v in View.AllChildren)
             {
                 if (v is T vt)
                 {
@@ -61,7 +58,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 }
             }
 
-            foreach (var r in RealXml.AllChildren)
+            foreach (var r in Real.AllChildren)
             {
                 if (r is T rt)
                 {
@@ -74,13 +71,20 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             // slow form viw VerifyFindType, since we dont know the T.
             ViewValidation.Verify(viewResult, realResult);
 
-            return which == ObjectType.View ? viewResult : realResult;
+            for (int i = 0; i < viewResult.Count; i++)
+            {
+                finalResult.Add(new ElementLinkPair<T>(viewResult[i], realResult[i]));
+            }
+
+            return finalResult;
         }
     }
 
 
     internal static partial class ViewValidation
     {
+        public static string Ver(this string str, int ver) => $"{str}{ver}";
+
         public static void VerifySameLocationWithException(Func<ElementLocation> expectedGetter, Func<ElementLocation> actualGetter)
         {
             Assert.Equal(GetWithExceptionCheck(expectedGetter, out var expected), GetWithExceptionCheck(actualGetter, out var actual));
@@ -282,55 +286,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.False(realXml is ProjectElementContainer);
                 VerifyProjectElementViewInternal(viewXml, realXml);
             }
-        }
-
-        private static bool VerifyCheckType<T>(ProjectElement viewXml, ProjectElement realXml, Action<T, T> elementValidator)
-            where T : ProjectElement
-        {
-            if (viewXml is T viewTypedXml)
-            {
-                Assert.True(realXml is T);
-                elementValidator(viewTypedXml, (T)realXml);
-                return true;
-            }
-            else
-            {
-                Assert.False(realXml is T);
-                return false;
-            }
-        }
-
-        public static void VerifyFindType(ProjectElement viewXml, ProjectElement realXml)
-        {
-            if (viewXml == null && realXml == null) return;
-            VerifyLinkedNotNull(viewXml);
-            VerifyNotLinkedNotNull(realXml);
-
-            if (VerifyCheckType<ProjectMetadataElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectChooseElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectWhenElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectOtherwiseElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectTaskElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectOutputElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectUsingTaskBodyElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectUsingTaskParameterElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<UsingTaskParameterGroupElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectUsingTaskElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectTargetElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectRootElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectExtensionsElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectImportElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectImportGroupElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectItemDefinitionElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectItemDefinitionGroupElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectItemElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectItemGroupElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectPropertyElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectPropertyGroupElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectSdkElement>(viewXml, realXml, Verify)) return;
-            if (VerifyCheckType<ProjectOnErrorElement>(viewXml, realXml, Verify)) return;
-
-            throw new NotImplementedException($"Unknown type:{viewXml.GetType().Name}");
         }
 
         public static void Verify(ProjectRootElement viewXml, ProjectRootElement realXml)

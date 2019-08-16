@@ -1711,8 +1711,8 @@ namespace Microsoft.Build.ObjectModelRemoting
         public static bool GetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml) { throw null; }
         public static void MarkDirty(Microsoft.Build.Construction.ProjectElement xml, string reason, string param) { }
         public static void SetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml, bool value) { }
-        public static void SetOrRemoveAttribute(Microsoft.Build.Construction.ProjectElement xml, string name, string value, bool allowSettingEmptyAttributes, string reason, string param) { }
-        public abstract void SetOrRemoveAttribute(string name, string value, bool allowSettingEmptyAttributes, string reason, string param);
+        public static void SetOrRemoveAttribute(Microsoft.Build.Construction.ProjectElement xml, string name, string value, bool clearAttributeCache, string reason, string param) { }
+        public abstract void SetOrRemoveAttribute(string name, string value, bool clearAttributeCache, string reason, string param);
     }
     public abstract partial class ProjectExtensionsElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementLink
     {

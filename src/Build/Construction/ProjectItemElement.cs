@@ -356,10 +356,7 @@ namespace Microsoft.Build.Construction
             base.CopyFrom(element);
 
             // clear cached fields
-            _include = null;
-            _exclude = null;
-            _remove = null;
-            _includeHasWildcards = null;
+            this.ClearAttributeCache();
         }
 
         /// <summary>
@@ -400,6 +397,15 @@ namespace Microsoft.Build.Construction
             XmlElementWithLocation newElement = XmlUtilities.RenameXmlElement(XmlElement, newItemType, XmlElement.NamespaceURI);
 
             ReplaceElement(newElement);
+        }
+
+        internal override void ClearAttributeCache()
+        {
+            base.ClearAttributeCache();
+            _include = null;
+            _exclude = null;
+            _remove = null;
+            _includeHasWildcards = null;
         }
 
         /// <summary>

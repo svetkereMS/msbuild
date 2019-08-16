@@ -390,6 +390,7 @@ namespace Microsoft.Build.Construction
             _expressedAsAttribute = element._expressedAsAttribute;
 
             MarkDirty("CopyFrom", null);
+            _condition = null;
         }
 
         /// <summary>
@@ -531,6 +532,20 @@ namespace Microsoft.Build.Construction
             return value;
         }
 
+        internal virtual void ClearAttributeCache()
+        {
+            this._condition = null;
+        }
+
+        internal void SetOrRemoveAttributeForLink(string name, string value, bool clearAttributeCache, string reason, string param)
+        {
+            SetOrRemoveAttribute(name, value, reason, param);
+            if (clearAttributeCache)
+            {
+                this.ClearAttributeCache();
+            }
+        }
+
         internal void SetOrRemoveAttribute(string name, string value, string reason = null, string param = null)
         {
             if (Link != null)
@@ -551,7 +566,7 @@ namespace Microsoft.Build.Construction
         {
             if (Link != null)
             {
-                Link.SetOrRemoveAttribute(name, value, false, reason, param);
+                Link.SetOrRemoveAttribute(name, value, true, reason, param);
             }
             else
             {
