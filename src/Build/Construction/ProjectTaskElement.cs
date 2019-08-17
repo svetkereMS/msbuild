@@ -369,15 +369,28 @@ namespace Microsoft.Build.Construction
             lock (_locker)
             {
                 _parameters = null;
+                List<XmlAttribute> toRemove = null;
+
+                // note this was a long standing bug in here (which would make this only work if there is no attributes to remove).
+                // calling XmlElement.RemoveAttributeNode will cause foreach to throw ArgumentException (collection modified)
                 foreach (XmlAttribute attribute in XmlElement.Attributes)
                 {
                     if (!XMakeAttributes.IsSpecialTaskAttribute(attribute.Name))
                     {
-                        XmlElement.RemoveAttributeNode(attribute);
+                        toRemove = toRemove ?? new List<XmlAttribute>();
+                        toRemove.Add(attribute);
                     }
                 }
 
-                MarkDirty("Remove all task parameters on {0}", Name);
+                if (toRemove != null)
+                {
+                    foreach (var attribute in toRemove)
+                    {
+                        XmlElement.RemoveAttributeNode(attribute);
+                    }
+
+                    MarkDirty("Remove all task parameters on {0}", Name);
+                }
             }
         }
 

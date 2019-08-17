@@ -280,7 +280,6 @@ namespace Microsoft.Build.Construction
             if (Link != null)
             {
                 ContainerLink.RemoveChild(child);
-                child.ClearParent();
                 return;
             }
 

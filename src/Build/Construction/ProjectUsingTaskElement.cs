@@ -54,7 +54,7 @@ namespace Microsoft.Build.Construction
             set
             {
                 ErrorUtilities.VerifyThrowArgumentLength(value, XMakeAttributes.assemblyName);
-                ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(AssemblyName), "OM_EitherAttributeButNotBoth", XmlElement.Name, XMakeAttributes.assemblyFile, XMakeAttributes.assemblyName);
+                ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(AssemblyName), "OM_EitherAttributeButNotBoth", ElementName, XMakeAttributes.assemblyFile, XMakeAttributes.assemblyName);
                 value = FileUtilities.FixFilePath(value);
                 SetOrRemoveAttribute(XMakeAttributes.assemblyFile, value, "Set usingtask AssemblyFile {0}", value);
             }

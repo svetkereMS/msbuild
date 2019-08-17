@@ -90,7 +90,7 @@ namespace Microsoft.Build.Construction
 
             set
             {
-                ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(PropertyName), "OM_EitherAttributeButNotBoth", XmlElement.Name, XMakeAttributes.itemName, XMakeAttributes.propertyName);
+                ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(PropertyName), "OM_EitherAttributeButNotBoth", ElementName, XMakeAttributes.itemName, XMakeAttributes.propertyName);
                 SetOrRemoveAttribute(XMakeAttributes.itemName, value, "Set Output ItemType {0}", value);
             }
         }
@@ -110,7 +110,7 @@ namespace Microsoft.Build.Construction
 
             set
             {
-                ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(ItemType), "OM_EitherAttributeButNotBoth", XmlElement.Name, XMakeAttributes.itemName, XMakeAttributes.propertyName);
+                ErrorUtilities.VerifyThrowInvalidOperation(String.IsNullOrEmpty(ItemType), "OM_EitherAttributeButNotBoth", ElementName, XMakeAttributes.itemName, XMakeAttributes.propertyName);
                 SetOrRemoveAttribute(XMakeAttributes.propertyName, value, "Set Output PropertyName {0}", value);
             }
         }

@@ -75,32 +75,92 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             return new ProjectPair(newView, newReal);
         }
 
-        // validates:
-        // ProjectTargetElement
-        // ProjectTaskElement
         // ProjectOutputElement
         [Fact]
-        public void ProjectTargetAndRelatedModify()
+        public void ProjectTargetElementModify()
         {
             var pair = GetNewInMemoryProject("temp.prj");
             var xmlPair = new ProjectXmlPair(pair);
 
             // create new target
             const string NewTargetName = "NewTargetName";
-            var newTargetView = xmlPair.View.AddTarget(NewTargetName);
-            var newTarget = xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName));
-            Assert.Same(newTargetView, newTarget.View);
 
-            var newTarget2View = xmlPair.View.AddTarget(NewTargetName.Ver(2));
-            var newTarget2 = xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName.Ver(2)));
-            Assert.Same(newTarget2View, newTarget2.View);
+            xmlPair.Add2NewChildrenWithVerify<ProjectTargetElement>(NewTargetName, (p, n) => p.AddTarget(n), (t, n) => string.Equals(t.Name, n), out var newTarget1, out var newTarget2);
 
 
-            // add task to target
+            // add tasks to target
             const string NewTaskName = "NewTaskName";
-            newTarget.Add2NewNamedChildrenWithVerify<ProjectTaskElement>(NewTaskName, NewTaskName.Ver(2), (t, n) => t.AddTask(n), out var newTask, out var newTask2);
+            newTarget1.Add2NewNamedChildrenWithVerify<ProjectTaskElement>(NewTaskName, (t, n) => t.AddTask(n), out var newTask1, out var newTask2);
 
-            // ProjectTaskElement validation (embedded here since task are only accessible from targets)
+            // Add item groups
+            const string NewTargetItemGroup = "NewTargetItemGroup";
+            newTarget1.Add2NewLabaledChildrenWithVerify<ProjectItemGroupElement>(NewTargetItemGroup, (t) => t.AddItemGroup(), out var newItemGroup1, out var newItemGroup2);
+
+            // Add property groups
+            const string NewPropertyGroup = "NewPropertyGroup";
+            newTarget1.Add2NewLabaledChildrenWithVerify<ProjectPropertyGroupElement>(NewPropertyGroup, (t) => t.AddPropertyGroup(), out var newPropertyGroup1, out var newPropertyGroup2);
+
+            // string setters
+            newTarget1.VerifySetter("newBeforeTargets", (t) => t.BeforeTargets, (t, v) => t.BeforeTargets = v);
+            newTarget1.VerifySetter("newDependsOnTargets", (t) => t.DependsOnTargets, (t, v) => t.DependsOnTargets = v);
+            newTarget1.VerifySetter("newAfterTargets", (t) => t.AfterTargets, (t, v) => t.AfterTargets = v);
+            newTarget1.VerifySetter("newReturns", (t) => t.Returns, (t, v) => t.Returns = v);
+            newTarget1.VerifySetter("newInputs", (t) => t.Inputs, (t, v) => t.Inputs = v);
+            newTarget1.VerifySetter("newOutputs", (t) => t.Outputs, (t, v) => t.Outputs = v);
+            newTarget1.VerifySetter("newKeepDuplicateOutputs", (t) => t.KeepDuplicateOutputs, (t, v) => t.KeepDuplicateOutputs = v);
+
+
+            newTarget1.VerifySetter("'Configuration' == 'Foo'", (t) => t.Condition, (t, v) => t.Condition = v);
+            newTarget1.VerifySetter("newLabel", (t) => t.Label, (t, v) => t.Label = v);
+
+            // rename target. First validate we do not change identity of the view
+            const string NewTargetRenamed = "NewTargetRenamed";
+            newTarget1.View.Name = NewTargetRenamed;
+            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName)));
+            newTarget1.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed)));
+
+            newTarget1.Real.Name = NewTargetRenamed.Ver(2);
+            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed)));
+            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName)));
+
+            newTarget1.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed.Ver(2))));
+
+            // this will rename back, as well as check the reqular way (after we confirmed the view identity dont change on rename).
+            newTarget1.VerifySetter(NewTargetName, (t) => t.Name, (t, v) => t.Name = v);
+
+
+            // removes
+            newTarget1.View.RemoveChild(newTask2.View);
+            Assert.ThrowsAny<ArgumentException>( () => newTarget1.Real.RemoveChild(newTask2.Real) );
+            Assert.Equal(1, newTarget1.View.Tasks.Count);
+            newTarget1.Real.RemoveChild(newTask1.Real);
+            Assert.ThrowsAny<ArgumentException>(() => newTarget1.View.RemoveChild(newTask1.View));
+            Assert.Empty(newTarget1.View.Tasks);
+
+            Assert.NotEmpty(newTarget1.View.ItemGroups);
+            Assert.NotEmpty(newTarget1.View.PropertyGroups);
+            newTarget1.View.RemoveAllChildren();
+
+            Assert.Empty(newTarget1.View.ItemGroups);
+            Assert.Empty(newTarget1.View.PropertyGroups);
+
+
+            newTarget1.Verify();
+        }
+
+        [Fact]
+        public void ProjectTaskElementModify()
+        {
+            var pair = GetNewInMemoryProject("temp.prj");
+            var xmlPair = new ProjectXmlPair(pair);
+
+            // create new target
+            const string NewTasktName = "NewTaskName";
+
+            var newTarget = xmlPair.AddNewChildrenWithVerify<ProjectTargetElement>(ObjectType.View, "TargetToTestTask", (p, n) => p.AddTarget(n), (t, n) => string.Equals(t.Name, n));
+            var newTask = newTarget.AddNewNamedChildrenWithVerify<ProjectTaskElement>(ObjectType.View, NewTasktName, (t, n) => t.AddTask(n));
+
+            Assert.Equal(0, newTask.View.Outputs.Count);
             const string NewOutputItem = "NewOutputItem";
             newTask.Add2NewChildrenWithVerify<ProjectOutputElement>(NewOutputItem, (t, n) => t.AddOutputItem(n, "CPP"), (oi, n) => oi.TaskParameter == n, out var newOutputItem1, out var newOutputItem2);
             Assert.True(newOutputItem1.View.IsOutputItem);
@@ -108,59 +168,118 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
 
             const string NewOutputItemWithConfig = "NewOutputItemCfg";
-            newTask.Add2NewChildrenWithVerify<ProjectOutputElement>(NewOutputItemWithConfig, (t, n) => t.AddOutputItem(n, "source", "'Configuration'='Foo'"), (oi, n) => oi.TaskParameter == n, out var newOutputItemWithConfig1, out var newOutputWithConfig2);
+            newTask.Add2NewChildrenWithVerify<ProjectOutputElement>(NewOutputItemWithConfig, (t, n) => t.AddOutputItem(n, "source", "'Configuration'='Foo'"), (oi, n) => oi.TaskParameter == n, out var newOutputItemWithConfig1, out var newOutputItemWithConfig2);
             Assert.True(newOutputItemWithConfig1.View.IsOutputItem);
             Assert.False(newOutputItemWithConfig1.View.IsOutputProperty);
 
+            const string NewOutputProperty = "NewOutputProperty";
+            newTask.Add2NewChildrenWithVerify<ProjectOutputElement>(NewOutputProperty, (t, n) => t.AddOutputProperty(n, "taskprop"), (oi, n) => oi.TaskParameter == n, out var newOutputProp1, out var newOutputProp2);
+            Assert.False(newOutputProp1.View.IsOutputItem);
+            Assert.True(newOutputProp1.View.IsOutputProperty);
 
 
+            const string NewOutputPropertyWithConfig = "NewOutputPropertyCfg";
+            newTask.Add2NewChildrenWithVerify<ProjectOutputElement>(NewOutputPropertyWithConfig, (t, n) => t.AddOutputProperty(n, "source", "'Configuration'='Foo'"), (oi, n) => oi.TaskParameter == n, out var newOutputPropWithConfig1, out var newOutputPropWithConfig2);
+            Assert.False(newOutputPropWithConfig1.View.IsOutputItem);
+            Assert.True(newOutputPropWithConfig1.View.IsOutputProperty);
 
-            // Add ItemGroup2
-            const string NewTargetItemGroup = "NewTargetItemGroup";
-            newTarget.Add2NewLabaledChildrenWithVerify<ProjectItemGroupElement>(NewTargetItemGroup, NewTargetItemGroup.Ver(2), (t) => t.AddItemGroup(), out var newItemGroup1, out var newItemGroup2);
+            Assert.Equal(8, newTask.View.Outputs.Count);
 
-            // Add property group
-            const string NewPropertyGroup = "NewPropertyGroup";
-            newTarget.Add2NewLabaledChildrenWithVerify<ProjectPropertyGroupElement>(NewPropertyGroup, NewPropertyGroup.Ver(2), (t) => t.AddPropertyGroup(), out var newPropertyGroup1, out var newPropertyGroup2);
+            newTask.VerifySetter("ErrorAndContinue", (t) => t.ContinueOnError, (t, v) => t.ContinueOnError = v);
+            newTask.VerifySetter("v665+1", (t) => t.MSBuildRuntime, (t, v) => t.MSBuildRuntime = v);
+            newTask.VerifySetter("msbuild256bit", (t) => t.MSBuildArchitecture, (t, v) => t.MSBuildArchitecture = v);
 
+            // test parameters
+            newTask.View.RemoveAllParameters();
+            newTask.Verify();
 
-            // string setters
-            newTarget.VerifySetter("newBeforeTargets", (t) => t.BeforeTargets, (t, v) => t.BeforeTargets = v);
-            newTarget.VerifySetter("newDependsOnTargets", (t) => t.DependsOnTargets, (t, v) => t.DependsOnTargets = v);
-            newTarget.VerifySetter("newAfterTargets", (t) => t.AfterTargets, (t, v) => t.AfterTargets = v);
-            newTarget.VerifySetter("newReturns", (t) => t.Returns, (t, v) => t.Returns = v);
-            newTarget.VerifySetter("newInputs", (t) => t.Inputs, (t, v) => t.Inputs = v);
-            newTarget.VerifySetter("newOutputs", (t) => t.Outputs, (t, v) => t.Outputs = v);
-            newTarget.VerifySetter("newKeepDuplicateOutputs", (t) => t.KeepDuplicateOutputs, (t, v) => t.KeepDuplicateOutputs = v);
+            Assert.Equal(0, newTask.View.Parameters.Count);
 
+            const string paramName = "paramName";
+            const string paramValue = "paramValue";
+            for (int i = 1; i <= 5; i++)
+            {
+                newTask.VerifySetter(paramValue.Ver(i), (t) => t.GetParameter(paramName.Ver(i)), (t, v) => t.SetParameter(paramName.Ver(i), v));
+            }
 
-            newTarget.VerifySetter("'Configuration' == 'Foo'", (t) => t.Condition, (t, v) => t.Condition = v);
-            newTarget.VerifySetter("newLabel", (t) => t.Label, (t, v) => t.Label= v);
-            
-            // rename target. First validate we do not change identity of the view
-            const string NewTargetRenamed = "NewTargetRenamed";
-            newTarget.View.Name = NewTargetRenamed;
-            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName)));
-            newTarget.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed)));
+            newTask.Verify(); 
+            Assert.Equal(5, newTask.View.Parameters.Count);
+            for (int i = 1; i<= 5; i++)
+            {
+                Assert.Equal(paramValue.Ver(i), newTask.View.Parameters[paramName.Ver(i)]);
+            }
 
-            newTarget.Real.Name = NewTargetRenamed.Ver(2);
-            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed)));
-            Assert.Empty(xmlPair.QueryChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetName)));
+            newTask.View.RemoveParameter(paramName.Ver(1));
+            newTask.Real.RemoveParameter(paramName.Ver(5));
+            newTask.Verify();
+            Assert.Equal(3, newTask.View.Parameters.Count);
+            for (int i = 2; i <= 4; i++)
+            {
+                Assert.Equal(paramValue.Ver(i), newTask.View.Parameters[paramName.Ver(i)]);
+            }
 
-            newTarget.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectTargetElement>((t) => string.Equals(t.Name, NewTargetRenamed.Ver(2))));
-
-            // this will rename back, as well as check the reqular way (after we confirmed the view identity dont change on rename).
-            newTarget.VerifySetter(NewTargetName, (t) => t.Name, (t, v) => t.Name = v);
-
-            // check everything before start removing
-            newTarget.Verify();
-
-
+            Assert.False(newTask.View.Parameters.ContainsKey(paramName.Ver(1)));
+            Assert.False(newTask.Real.Parameters.ContainsKey(paramName.Ver(1)));
+            Assert.False(newTask.View.Parameters.ContainsKey(paramName.Ver(5)));
+            Assert.False(newTask.Real.Parameters.ContainsKey(paramName.Ver(5)));
 
 
+            newTask.View.RemoveAllParameters();
+            newTask.Verify();
+            Assert.Equal(0, newTask.View.Parameters.Count);
 
 
+            newTask.View.RemoveChild(newOutputItem2.View);
+            Assert.ThrowsAny<ArgumentException>(() => newTask.Real.RemoveChild(newOutputItem2.Real));
+            Assert.Equal(7, newTask.View.Outputs.Count);
+            newTask.Real.RemoveChild(newOutputItemWithConfig2.Real);
+            Assert.ThrowsAny<ArgumentException>(() => newTask.View.RemoveChild(newOutputItem2.View));
+
+            Assert.Equal(6, newTask.View.Outputs.Count);
+
+            newTask.Real.RemoveChild(newOutputProp2.Real);
+            Assert.Equal(5, newTask.View.Outputs.Count);
+            newTask.View.RemoveChild(newOutputPropWithConfig2.View);
+            Assert.Equal(4, newTask.View.Outputs.Count);
+
+            newTask.QueryChildrenWithValidation<ProjectOutputElement>((po) => po.TaskParameter.EndsWith("1"), 4);
+
+            newTask.Verify();
         }
+
+        [Fact]
+        public void ProjectOutputElementModify()
+        {
+            var pair = GetNewInMemoryProject("temp.prj");
+            var xmlPair = new ProjectXmlPair(pair);
+
+            var newTarget = xmlPair.AddNewChildrenWithVerify<ProjectTargetElement>(ObjectType.View, "TargetToTestTask", (p, n) => p.AddTarget(n), (t, n) => string.Equals(t.Name, n));
+            var newTask = newTarget.AddNewNamedChildrenWithVerify<ProjectTaskElement>(ObjectType.Real, "NewTaskName", (t, n) => t.AddTask(n));
+
+            const string NewOutputItem = "NewOutputItem";
+            const string ItemType = "CPPSource";
+            var newOutputItem =  newTask.AddNewChildrenWithVerify<ProjectOutputElement>(ObjectType.View, NewOutputItem, (t, n) => t.AddOutputItem(n, ItemType), (oi, n) => oi.TaskParameter == n);
+
+            Assert.True(newOutputItem.View.IsOutputItem);
+            Assert.False(newOutputItem.View.IsOutputProperty);
+
+            const string NewOutputProperty = "NewOutputProperty";
+            const string PropertyName = "OutputPropName";
+            var newOutputProp = newTask.AddNewChildrenWithVerify<ProjectOutputElement>(ObjectType.View, NewOutputProperty, (t, n) => t.AddOutputProperty(n, PropertyName), (oi, n) => oi.TaskParameter == n);
+            Assert.False(newOutputProp.View.IsOutputItem);
+            Assert.True(newOutputProp.View.IsOutputProperty);
+
+            newOutputItem.VerifySetter(NewOutputItem.Ver(1), (o) => o.TaskParameter, (o, v) => o.TaskParameter = v);
+            newOutputProp.VerifySetter(NewOutputProperty.Ver(1), (o) => o.TaskParameter, (o, v) => o.TaskParameter = v);
+
+            newOutputItem.VerifySetter(ItemType.Ver(1), (o) => o.ItemType, (o, v) => o.ItemType = v);
+            Assert.ThrowsAny<InvalidOperationException>(() => newOutputProp.View.ItemType = "foo");
+
+            newOutputProp.VerifySetter(PropertyName.Ver(1), (o) => o.PropertyName, (o, v) => o.PropertyName = v);
+            Assert.ThrowsAny<InvalidOperationException>(() => newOutputItem.View.PropertyName = "foo");
+        }
+
+
     }
 }
 

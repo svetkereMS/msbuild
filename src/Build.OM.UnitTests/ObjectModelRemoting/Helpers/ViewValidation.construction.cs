@@ -32,6 +32,22 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             return c1;
         }
 
+        public ElementLinkPair<CT> AddNewNamedChildrenWithVerify<CT>(ObjectType where, string name, Func<T, string, CT> adder)
+            where CT : ProjectElement
+            => AddNewChildrenWithVerify(where, name, adder, (c, n) => string.Equals(c.ElementName, name));
+
+        public ElementLinkPair<CT> AddNewLabaledChildrenWithVerify<CT>(ObjectType where, string label, Func<T, CT> adder)
+            where CT : ProjectElement
+            => AddNewChildrenWithVerify(where, label,
+                (t, l)=>
+                {
+                    var ct = adder(t);
+                    Assert.NotNull(ct);
+                    ct.Label = label;
+                    return ct;
+                },
+                (c, n) => string.Equals(c.Label, n));
+
         public void Add2NewChildrenWithVerify<CT>(string id, Func<T, string, CT> adder, Func<CT, string, bool> matcher, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
             where CT : ProjectElement
         {
@@ -39,47 +55,19 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             c2 = AddNewChildrenWithVerify(ObjectType.Real, id.Ver(2), adder, matcher);
         }
 
-        public ElementLinkPair<CT> AddNewNamedChildrenWithVerify<CT>(ObjectType where, string name, Func<T, string, CT> adder)
+
+        public void Add2NewNamedChildrenWithVerify<CT>(string name, Func<T, string, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
             where CT : ProjectElement
         {
-
-            var c1Where = adder(this.Get(where), name);
-            Assert.NotNull(c1Where);
-
-            var c1 = this.QuerySingleChildrenWithValidation<CT>((t) => string.Equals(t.ElementName, name));
-            Assert.Same(c1Where, c1.Get(where));
-
-            return c1;
+            c1 = AddNewNamedChildrenWithVerify(ObjectType.View, name.Ver(1), adder);
+            c2 = AddNewNamedChildrenWithVerify(ObjectType.Real, name.Ver(2), adder);
         }
 
-
-        public ElementLinkPair<CT> AddNewLabaledChildrenWithVerify<CT>(ObjectType where, string label, Func<T, CT> adder)
+        public void Add2NewLabaledChildrenWithVerify<CT>(string label, Func<T, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
             where CT : ProjectElement
         {
-
-            var c1Where = adder(this.Get(where));
-            Assert.NotNull(c1Where);
-            c1Where.Label = label;
-
-            var c1 = this.QuerySingleChildrenWithValidation<CT>((t) => string.Equals(t.Label, label));
-            Assert.Same(c1Where, c1.Get(where));
-
-            return c1;
-        }
-
-
-        public void Add2NewNamedChildrenWithVerify<CT>(string name1, string name2, Func<T, string, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
-            where CT : ProjectElement
-        {
-            c1 = AddNewNamedChildrenWithVerify(ObjectType.View, name1, adder);
-            c2 = AddNewNamedChildrenWithVerify(ObjectType.Real, name2, adder);
-        }
-
-        public void Add2NewLabaledChildrenWithVerify<CT>(string label1, string label2, Func<T, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
-            where CT : ProjectElement
-        {
-            c1 = AddNewLabaledChildrenWithVerify(ObjectType.View, label1, adder);
-            c2 = AddNewLabaledChildrenWithVerify(ObjectType.Real, label2, adder);
+            c1 = AddNewLabaledChildrenWithVerify(ObjectType.View, label.Ver(1), adder);
+            c2 = AddNewLabaledChildrenWithVerify(ObjectType.Real, label.Ver(2), adder);
         }
 
         public ICollection<ElementLinkPair<CT>> QueryChildrenWithValidation<CT>(Func<CT, bool> matcher, int expectedCount)
@@ -126,7 +114,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                     }
                 }
             }
-            // slow form viw VerifyFindType, since we dont know the T.
+            // slow form view VerifyFindType, since we dont know the T.
             ViewValidation.Verify(viewResult, realResult);
 
             for (int i = 0; i < viewResult.Count; i++)
@@ -170,7 +158,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal static partial class ViewValidation
     {
-        public static string Ver(this string str, int ver) => $"{str}{ver}";
+        public static string Ver(this string str, int ver) => $"{str}_{ver}";
+        public static string Ver(this string str, int ver, int subver) => $"{str}_{ver}_{subver}";
 
         public static void VerifySameLocationWithException(Func<ElementLocation> expectedGetter, Func<ElementLocation> actualGetter)
         {
