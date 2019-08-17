@@ -75,7 +75,45 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             return new ProjectPair(newView, newReal);
         }
 
-        // ProjectOutputElement
+        [Fact]
+        public void ProjectRootElementModify()
+        {
+            var pair = GetNewInMemoryProject("temp.prj");
+            var xmlPair = new ProjectXmlPair(pair);
+
+            xmlPair.VerifySetter(this.StdGroup.Disk.GetAbsolutePath("tempRenamed"), (p) => p.FullPath, (p, v) => p.FullPath = v);
+            xmlPair.VerifySetter("build", (p) => p.DefaultTargets, (p, v) => p.DefaultTargets = v);
+            xmlPair.VerifySetter("init", (p) => p.InitialTargets, (p, v) => p.InitialTargets = v);
+            xmlPair.VerifySetter("YetAnotherSDK", (p) => p.Sdk, (p, v) => p.Sdk = v);
+            xmlPair.VerifySetter("NonLocalProp", (p) => p.TreatAsLocalProperty, (p, v) => p.TreatAsLocalProperty = v);
+            xmlPair.VerifySetter("xmakever", (p) => p.ToolsVersion, (p, v) => p.ToolsVersion = v);
+
+            var newImport = this.StdGroup.Disk.GetAbsolutePath("import");
+            xmlPair.Add2NewChildrenWithVerify<ProjectImportElement>(newImport, (p, i) => p.AddImport(i), (pi, i) => pi.Project == i, out var import1, out var import2);
+            xmlPair.Add2NewLabaledChildrenWithVerify<ProjectImportGroupElement>("ImportGroupLabel", (p) => p.AddImportGroup(), out var importGroup1, out var importGroup2);
+
+            var newItem = this.StdGroup.Disk.GetAbsolutePath("newfile.cpp");
+            xmlPair.Add2NewChildrenWithVerify<ProjectItemElement>(newItem, (p, i) => p.AddItem("cpp", i), (pi, i) => pi.Include == i, out var item1, out var item2);
+            var newItemWithMetadata = this.StdGroup.Disk.GetAbsolutePath("newfile2.cpp");
+            List<KeyValuePair<string, string>> itemMetadata = new List<KeyValuePair<string, string>>()
+            {
+                new KeyValuePair<string, string>("m1", "v1"),
+                new KeyValuePair<string, string>("m2", "v2"),
+                new KeyValuePair<string, string>("m3", "v3"),
+            };
+
+            xmlPair.Add2NewChildrenWithVerify<ProjectItemElement>(newItemWithMetadata, (p, i) => p.AddItem("cpp", i, itemMetadata), (pi, i) => pi.Include == i, out var itemWithMetadata1, out var itemWithMetadata2);
+
+
+
+            // funny API (not that anyone will use it).
+            var clone = xmlPair.View.DeepClone();
+            ViewValidation.IsLinkedObject(clone);
+            Assert.NotSame(clone, xmlPair.View);
+            Assert.True(string.IsNullOrEmpty(clone.FullPath));
+        }
+
+
         [Fact]
         public void ProjectTargetElementModify()
         {
@@ -279,7 +317,67 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.ThrowsAny<InvalidOperationException>(() => newOutputItem.View.PropertyName = "foo");
         }
 
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectMetadataElementModify()
+        {
+            var pair = GetNewInMemoryProject("temp.prj");
+            var xmlPair = new ProjectXmlPair(pair);
+        }
 
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectChooseElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectWhenElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectOtherwiseElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectUsingTaskBodyElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectUsingTaskParameterElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void UsingTaskParameterGroupElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectUsingTaskElementModify() => throw new NotImplementedException();
+
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectExtensionsElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectImportElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectImportGroupElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectItemDefinitionElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectItemDefinitionGroupElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectItemElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectItemGroupElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectPropertyElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectPropertyGroupElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectSdkElementModify() => throw new NotImplementedException();
+
+        [Fact(Skip = "TODO: NotImplemented")]
+        public void ProjectOnErrorElementModify() => throw new NotImplementedException();
     }
 }
 

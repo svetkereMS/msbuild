@@ -37,6 +37,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             // validate there is exactly 1 item with this include in both view and real and it is the exact same object.
             Assert.Same(result, this.GetSingleItemWithVerify(where, result.EvaluatedInclude));
 
+
             if (metadata != null)
             {
                 foreach (var m in metadata)

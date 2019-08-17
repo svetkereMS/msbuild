@@ -40,6 +40,28 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Same((object)this.Real, (object)other.Real);
         }
 
+        public void VerifySetter(bool finalValue, Func<T, bool> getter, Action<T, bool> setter)
+        {
+            var current = getter(this.Real);
+            Assert.Equal(current, getter(this.View));
+
+            // set via the view
+            setter(this.View, !current);
+
+            Assert.Equal(!current, getter(this.View));
+            Assert.Equal(!current, getter(this.Real));
+
+            // set via the real.
+            setter(this.Real, current);
+
+            Assert.Equal(current, getter(this.View));
+            Assert.Equal(current, getter(this.Real));
+
+            setter(this.View, finalValue);
+            Assert.Equal(finalValue, getter(this.View));
+            Assert.Equal(finalValue, getter(this.Real));
+        }
+
         public void VerifySetter(string newValue, Func<T, string> getter, Action<T, string> setter)
         {
             var newValue1 = newValue.Ver(1);
@@ -126,5 +148,21 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             throw new NotImplementedException($"Unknown type:{view.GetType().Name}");
         }
 
+
+        public static void VerifyMetadata(IEnumerable<KeyValuePair<string, string>> expected, Func<string, string> getMetadata, Func<string, bool> hasMetadata = null)
+        {
+            if (expected == null) return;
+
+            foreach (var md in expected)
+            {
+                if (hasMetadata != null)
+                {
+                    Assert.True(hasMetadata(md.Key));
+                }
+
+                Assert.Equal(md.Value, getMetadata(md.Key));
+
+            }
+        }
     }
 }
