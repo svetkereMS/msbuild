@@ -345,35 +345,5 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal(real.EvaluationCounter, view.EvaluationCounter);
             Assert.Equal(real.LastEvaluationId, view.LastEvaluationId);
         }
-
-        public static void Verify<T>(IDictionary<string, T> viewCollection, IDictionary<string, T> realCollection, Action<T, T, ValidationContext> validator, ValidationContext context = null)
-        {
-            if (viewCollection == null && realCollection == null) return;
-            Assert.NotNull(viewCollection);
-            Assert.NotNull(realCollection);
-
-            Assert.Equal(realCollection.Count, viewCollection.Count);
-            foreach (var k in realCollection.Keys)
-            {
-                Assert.True(viewCollection.TryGetValue(k, out var vv));
-                Assert.True(realCollection.TryGetValue(k, out var rv));
-                validator(vv, rv, context);
-            }
-        }
-
-        public static void Verify<T>(IEnumerable<T> viewCollection, IEnumerable<T> realCollection, Action<T, T, ValidationContext> validator, ValidationContext context = null)
-        {
-            if (viewCollection == null && realCollection == null) return;
-            Assert.NotNull(viewCollection);
-            Assert.NotNull(realCollection);
-
-            var viewXmlList = viewCollection.ToList();
-            var realXmlList = realCollection.ToList();
-            Assert.Equal(realXmlList.Count, viewXmlList.Count);
-            for (int i = 0; i < realXmlList.Count; i++)
-            {
-                validator(viewXmlList[i], realXmlList[i], context);
-            }
-        }
     }
 }

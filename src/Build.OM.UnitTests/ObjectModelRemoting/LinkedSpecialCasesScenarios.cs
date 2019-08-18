@@ -200,7 +200,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             // note do that before changing the label.
             Assert.NotSame(realExistingItemGroup, newDeepCopy.Real);
             // TODO XmlLocation is (correctly) different for the items, need to find a way to bypass it.
-            // ViewValidation.Verify(newDeepCopy.View, realExistingItemGroup);
+            var context = new ValidationContext();
+            context.ValidateLocation = delegate (ElementLocation a, ElementLocation e) { return;};
+
+            ViewValidation.Verify(newDeepCopy.View, realExistingItemGroup, context);
             newDeepCopy.View.Label = "DeepCopyFrom";
             newDeepCopy.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectItemGroupElement>((ig) => ig.Label == "DeepCopyFrom"));
             ourGroup1.VerifySame(xmlPair.QuerySingleChildrenWithValidation<ProjectItemGroupElement>((ig) => ig.Label == "Group1"));
