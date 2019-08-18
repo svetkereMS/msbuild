@@ -162,13 +162,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             // Test remove items.
 
+            var validationContext = new ValidationContext(pair);
             // remove single from view
             {
                 Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadataFast.cpp"));
                 var barWithMetadataViewFast = pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadataFast.cpp");
                 Assert.NotNull(barWithMetadataViewFast);
 
-                ViewValidation.Verify(barWithMetadataViewFast, barWithMetadataRealFast, pair);
+                ViewValidation.Verify(barWithMetadataViewFast, barWithMetadataRealFast, validationContext);
                 Assert.Throws<ArgumentException>(() =>
                    {
                        pair.Real.RemoveItem(barWithMetadataViewFast);
@@ -183,7 +184,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.View, "fooWithMetadata.cpp"));
                 var barWithMetadataView = pair.GetSingleItemWithVerify(ObjectType.View, "barWithMetadata.cpp");
                 Assert.NotNull(barWithMetadataView);
-                ViewValidation.Verify(barWithMetadataView, barWithMetadataReal, pair);
+                ViewValidation.Verify(barWithMetadataView, barWithMetadataReal, validationContext);
                 var toRemoveView = new List<ProjectItem>() { barWithMetadataView, fooWithMetadataView };
 
                 Assert.Throws<ArgumentException>(() =>
@@ -202,7 +203,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.Real, "fooWithMetadataFast.cpp"));
                 var fooWithMetadataRealFast = pair.GetSingleItemWithVerify(ObjectType.Real, "fooWithMetadataFast.cpp");
                 Assert.NotNull(fooWithMetadataRealFast);
-                ViewValidation.Verify(fooWithMetadataViewFast, fooWithMetadataRealFast, pair);
+                ViewValidation.Verify(fooWithMetadataViewFast, fooWithMetadataRealFast, validationContext);
 
                 // Note in reality we do not guarantee that the Export provider will re-throw exactly the same exception.
                 // (some exception can be hard to marshal) Current mock does in fact forward exact exception.)
@@ -221,7 +222,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 Assert.NotNull(pair.GetSingleItemWithVerify(ObjectType.Real, "barFast.cpp"));
                 var fooRealFast = pair.GetSingleItemWithVerify(ObjectType.Real, "fooFast.cpp");
                 Assert.NotNull(fooRealFast);
-                ViewValidation.Verify(fooViewFast, fooRealFast, pair);
+                ViewValidation.Verify(fooViewFast, fooRealFast, validationContext);
                 var toRemoveReal = new List<ProjectItem>() { fooRealFast, barRealFast};
 
                 Assert.Throws<ArgumentException>(() =>
@@ -237,32 +238,32 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             // Check metadata modify
             var fooReal = pair.GetSingleItemWithVerify(ObjectType.Real, "foo.cpp");
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
 
             Assert.False(fooView.HasMetadata("xx"));
             fooView.SetMetadataValue("xx", "xxValue");
             Assert.True(fooView.HasMetadata("xx"));
             Assert.Equal("xxValue", fooView.GetMetadataValue("xx"));
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
 
 
             Assert.False(fooView.RemoveMetadata("xxNone"));
             Assert.True(fooView.RemoveMetadata("xx"));
             Assert.False(fooView.HasMetadata("xx"));
 
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
             // now check metadata modify via real also affect view.
 
             Assert.False(fooView.HasMetadata("xxReal"));
             fooReal.SetMetadataValue("xxReal", "xxRealValue");
             Assert.True(fooView.HasMetadata("xxReal"));
             Assert.Equal("xxRealValue", fooView.GetMetadataValue("xxReal"));
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
 
             Assert.True(fooReal.RemoveMetadata("xxReal"));
             Assert.False(fooView.HasMetadata("xxReal"));
 
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
 
             // TODO: test the boolean form (low value for linking really).
 
@@ -275,7 +276,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.Equal("cpp3", fooView.ItemType);
             Assert.Equal("cpp3", fooReal.ItemType);
 
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
 
             // UnevaluatedInclude set
 
@@ -287,7 +288,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             fooReal.UnevaluatedInclude = "fooRenamedAgain.cpp";
             Assert.Equal("fooRenamedAgain.cpp", fooView.UnevaluatedInclude);
             Assert.Equal("fooRenamedAgain.cpp", fooReal.UnevaluatedInclude);
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
 
             // Rename.
             fooView.Rename("fooRenamedOnceMore.cpp");
@@ -297,7 +298,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             fooReal.Rename("fooRenamedLastTimeForSure.cpp");
             Assert.Equal("fooRenamedLastTimeForSure.cpp", fooView.UnevaluatedInclude);
             Assert.Equal("fooRenamedLastTimeForSure.cpp", fooReal.UnevaluatedInclude);
-            ViewValidation.Verify(fooView, fooReal, pair);
+            ViewValidation.Verify(fooView, fooReal, validationContext);
 
 
             // and finally again verify the two projects are equivalent as a whole.
