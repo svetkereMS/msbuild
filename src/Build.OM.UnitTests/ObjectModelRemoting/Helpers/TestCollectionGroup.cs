@@ -169,6 +169,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                             <OnError ExecuteTargets='2'/>
                         </Target>
 
+                        <Sdk Name=""sdkName"" Version=""version"" MinimumVersion=""minVersion"" />
 
                        <ProjectExtensions>
                          <a>x</a>
@@ -176,8 +177,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                        </ProjectExtensions>
                     </Project>
                 ");
-
-
         public int RemoteCount { get; }
 
         internal ProjectCollectionLinker.ConnectedProjectCollections Group { get; }

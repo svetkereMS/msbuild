@@ -1960,6 +1960,7 @@ namespace Microsoft.Build.ObjectModelRemoting
     public abstract partial class ProjectUsingTaskParameterElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementLink
     {
         protected ProjectUsingTaskParameterElementLink() { }
+        public abstract string Name { get; set; }
     }
     public abstract partial class ProjectWhenElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {

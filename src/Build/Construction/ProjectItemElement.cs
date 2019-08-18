@@ -405,6 +405,7 @@ namespace Microsoft.Build.Construction
             _include = null;
             _exclude = null;
             _remove = null;
+            _update = null;
             _includeHasWildcards = null;
         }
 

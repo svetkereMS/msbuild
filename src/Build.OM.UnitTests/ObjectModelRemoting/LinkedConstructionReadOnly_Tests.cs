@@ -101,6 +101,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.NotEmpty(realExtensionsList);
 
             ViewValidation.Verify(viewExtensionsList, realExtensionsList, ViewValidation.Verify);
+
+            var realXml = realExtensionsList.FirstOrDefault();
+            var viewXml = viewExtensionsList.FirstOrDefault();
+
+            Assert.Equal(realXml["a"], viewXml["a"]);
+            Assert.Equal(realXml["b"], viewXml["b"]);
+            Assert.Equal("x", viewXml["a"]);
+            Assert.Equal("y", viewXml["b"]);
+
         }
 
         [Fact]
@@ -233,7 +242,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             ViewValidation.Verify(viewCollection, realCollection, ViewValidation.Verify);
         }
 
-        [Fact(Skip = "todo: need to figuew out how to add Sdk element")]
+        [Fact]
         public void ProjectProjectSdkElementReadOnly()
         {
             var preReal = this.StdGroup.RealXml;

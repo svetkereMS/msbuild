@@ -16,6 +16,7 @@ namespace Microsoft.Build.Construction
     [DebuggerDisplay("Name={Name} ParameterType={ParameterType} Output={Output} Required={Required}")]
     public class ProjectUsingTaskParameterElement : ProjectElement
     {
+        ProjectUsingTaskParameterElementLink TaskParameterLink => (ProjectUsingTaskParameterElementLink)Link;
         /// <summary>
         /// External projects support
         /// </summary>
@@ -61,7 +62,20 @@ namespace Microsoft.Build.Construction
             set
             {
                 ErrorUtilities.VerifyThrowArgumentLength(value, nameof(Name));
-                SetOrRemoveAttribute(XMakeAttributes.name, value, "Set usingtaskparameter {0}", value);
+
+                if (Link != null) { TaskParameterLink.Name = value; return; }
+                // TODO: There seems to be a bug here
+                // the Name returns the element name (consistent with XML view aka:)
+                // <fooParam .../> => this.Name = fooParan
+                // while setter will "set" the "Name" attribute, instead of renaming the XML element aka
+                // <fooParam Name="newName".../> instead of (so this.Name still is "fooParam"
+                // <newName .../>
+                // i have changed the "link" to support either way, should check whether it has to be fix on real object as well.
+
+                XmlElementWithLocation newElement = XmlUtilities.RenameXmlElement(XmlElement, value, XmlElement.NamespaceURI);
+                ReplaceElement(newElement);
+
+                 // SetOrRemoveAttribute(XMakeAttributes.name, value, "Set usingtaskparameter {0}", value);
             }
         }
 

@@ -132,10 +132,4 @@ namespace Microsoft.Build.ObjectModelRemoting
     /// Allow for creating a local representation to external object of type <see cref="ProjectOutputElement"/>
     /// </summary>
     public abstract class ProjectOutputElementLink : ProjectElementLink { }
-
-    /// <summary>
-    /// External projects support.
-    /// Allow for creating a local representation to external object of type <see cref="ProjectUsingTaskParameterElement"/>
-    /// </summary>
-    public abstract class ProjectUsingTaskParameterElementLink : ProjectElementLink { }
 }

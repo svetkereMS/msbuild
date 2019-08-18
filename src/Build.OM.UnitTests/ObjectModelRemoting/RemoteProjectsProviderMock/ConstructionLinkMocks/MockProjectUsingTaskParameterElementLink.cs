@@ -8,6 +8,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     internal class MockProjectUsingTaskParameterElementLinkRemoter : MockProjectElementLinkRemoter
     {
+        public ProjectUsingTaskParameterElement TaskParamXml => (ProjectUsingTaskParameterElement)Source;
         public override ProjectElement ImportImpl(ProjectCollectionLinker remote)
         {
             return remote.Import<ProjectElement, MockProjectUsingTaskParameterElementLinkRemoter>(this);
@@ -18,6 +19,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var link = new MockProjectUsingTaskParameterElementLink(this, holder);
             return holder.Linker.LinkFactory.Create(link);
         }
+
+        public string Name { get => this.TaskParamXml.Name; set => TaskParamXml.Name = value; }
     }
 
     internal class MockProjectUsingTaskParameterElementLink : ProjectUsingTaskParameterElementLink, ILinkMock, IProjectElementLinkHelper
@@ -34,7 +37,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         object ILinkMock.Remoter => this.Proxy;
         MockProjectElementLinkRemoter IProjectElementLinkHelper.ElementProxy => this.Proxy;
 
-
+        public override string Name { get => Proxy.Name ; set =>Proxy.Name = value; }
         #region ProjectElementLink redirectors
         private IProjectElementLinkHelper EImpl => (IProjectElementLinkHelper)this;
         public override ProjectElementContainer Parent => EImpl.GetParent();

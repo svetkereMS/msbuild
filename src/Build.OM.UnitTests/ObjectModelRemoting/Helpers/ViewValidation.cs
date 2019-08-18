@@ -34,6 +34,12 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public T View { get; }
         public T Real { get; }
 
+        public void VerifyNotSame(LinkPair<T> other)
+        {
+            Assert.NotSame((object)this.View, (object)other.View);
+            Assert.NotSame((object)this.Real, (object)other.Real);
+        }
+
         public void VerifySame(LinkPair<T> other)
         {
             Assert.Same((object)this.View, (object)other.View);
@@ -81,6 +87,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             Assert.Equal(newValue, getter(this.View));
             Assert.Equal(newValue, getter(this.Real));
+            this.Verify();
         }
 
         public virtual void Verify()
@@ -148,7 +155,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             throw new NotImplementedException($"Unknown type:{view.GetType().Name}");
         }
 
-
         public static void VerifyMetadata(IEnumerable<KeyValuePair<string, string>> expected, Func<string, string> getMetadata, Func<string, bool> hasMetadata = null)
         {
             if (expected == null) return;
@@ -161,7 +167,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                 }
 
                 Assert.Equal(md.Value, getMetadata(md.Key));
-
             }
         }
     }
