@@ -92,13 +92,20 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
     **************************************************************************************/
 
+    internal interface IRemoterSource
+    {
+        object RealObject { get; }
+    }
+
     /// <summary>
     /// Base remoter object implementation.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal abstract class MockLinkRemoter<T> : ExportedLinksMap.LinkedObject<T> //, IRemoteLinkId // LinkRemoterMock
+    internal abstract class MockLinkRemoter<T> : ExportedLinksMap.LinkedObject<T> , IRemoterSource
         where T : class
     {
+        object IRemoterSource.RealObject => this.Source;
+
         public ProjectCollectionLinker OwningCollection { get; private set; }
 
         public RMock Export<PT, RMock>(PT obj)

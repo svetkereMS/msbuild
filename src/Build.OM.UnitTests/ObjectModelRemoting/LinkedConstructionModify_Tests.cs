@@ -25,32 +25,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
     {
         public class MyTestCollectionGroup : TestCollectionGroup
         {
-            public string LocalBigPath { get; }
-            public string TargetBigPath { get; }
-            public string GuestBigPath { get; }
-
             public Project LocalBig { get; }
             public Project TargetBig { get; }
-            public Project GuestBig { get; }
 
             internal ProjectCollectionLinker Target { get; }
-            internal ProjectCollectionLinker Guest { get; }
 
             public MyTestCollectionGroup()
                 : base(2, 0)
             {
-                this.LocalBigPath = this.ImmutableDisk.WriteProjectFile($"BigLocal.proj", TestCollectionGroup.BigProjectFile);
-                this.TargetBigPath = this.ImmutableDisk.WriteProjectFile($"BigTarget.proj", TestCollectionGroup.BigProjectFile);
-                this.GuestBigPath = this.ImmutableDisk.WriteProjectFile($"BigGuest.proj", TestCollectionGroup.BigProjectFile);
-
                 this.Target = this.Remote[0];
-                this.Guest = this.Remote[1];
-
-                this.LocalBig = this.Local.LoadProjectIgnoreMissingImports(this.LocalBigPath);
-                this.TargetBig = this.Target.LoadProjectIgnoreMissingImports(this.TargetBigPath);
-                this.GuestBig = this.Guest.LoadProjectIgnoreMissingImports(this.GuestBigPath);
-
-                this.TakeSnaphot();
                 this.Local.Importing = true;
             }
         }
@@ -104,21 +87,21 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             // Imports
             xmlPair.Add2NewChildrenWithVerify<ProjectImportElement>(newImport, (p, i) => p.AddImport(i), (pi, i) => pi.Project == i, out var import1, out var import2);
-            xmlPair.Add2NewLabaledChildrenWithVerify<ProjectImportGroupElement>("ImportGroupLabel", (p, l) => p.AddImportGroup(), out var importGroup1, out var importGroup2);
+            xmlPair.Add2NewLabeledChildrenWithVerify<ProjectImportGroupElement>("ImportGroupLabel", (p, l) => p.AddImportGroup(), out var importGroup1, out var importGroup2);
 
             // Items
             xmlPair.Add2NewChildrenWithVerify<ProjectItemElement>(newItem, (p, i) => p.AddItem("cpp", i), (pi, i) => pi.Include == i, out var item1, out var item2);
             xmlPair.Add2NewChildrenWithVerify<ProjectItemElement>(newItemWithMetadata, (p, i) => p.AddItem("cpp", i, itemMetadata), (pi, i) => pi.Include == i, out var itemWithMetadata1, out var itemWithMetadata2);
             ViewValidation.VerifyMetadata(itemMetadata, (k) => itemWithMetadata1.View.Metadata.Where((md) => md.Name == k).FirstOrDefault().Value);
-            xmlPair.Add2NewLabaledChildrenWithVerify<ProjectItemGroupElement>("ItemGroup", (p, l) => p.AddItemGroup(), out var itemGroup1, out var itemGroup2);
+            xmlPair.Add2NewLabeledChildrenWithVerify<ProjectItemGroupElement>("ItemGroup", (p, l) => p.AddItemGroup(), out var itemGroup1, out var itemGroup2);
 
             // ItemDefs
             xmlPair.Add2NewChildrenWithVerify<ProjectItemDefinitionElement>("cpp", (p, it) => p.AddItemDefinition(it), (pi, it) => pi.ItemType == it, out var itemDefinition1, out var itemDefinition2);
-            xmlPair.Add2NewLabaledChildrenWithVerify<ProjectItemDefinitionGroupElement>("ItemDefGroup", (p, l) => p.AddItemDefinitionGroup(), out var itemDefinitionGroup1, out var itemDefinitionGroup2);
+            xmlPair.Add2NewLabeledChildrenWithVerify<ProjectItemDefinitionGroupElement>("ItemDefGroup", (p, l) => p.AddItemDefinitionGroup(), out var itemDefinitionGroup1, out var itemDefinitionGroup2);
 
             // Property
             xmlPair.Add2NewChildrenWithVerify<ProjectPropertyElement>("NewProp", (p, pn) => p.AddProperty(pn, $"Value{pn}"), (prop, pn) => prop.Name == pn, out var itemProp1, out var itemProp2);
-            xmlPair.Add2NewLabaledChildrenWithVerify<ProjectPropertyGroupElement>("NewPropGroup", (p, l) => p.AddPropertyGroup(), out var itemPropretyGroup1, out var itemPropretyGroup2);
+            xmlPair.Add2NewLabeledChildrenWithVerify<ProjectPropertyGroupElement>("NewPropGroup", (p, l) => p.AddPropertyGroup(), out var itemPropretyGroup1, out var itemPropretyGroup2);
 
             // Target & Tasks
             xmlPair.Add2NewChildrenWithVerify<ProjectTargetElement>("NewTarget", (p, n) => p.AddTarget(n), (t, n) => string.Equals(t.Name, n), out var newTarget1, out var newTarget2);
@@ -180,11 +163,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             // Add item groups
             const string NewTargetItemGroup = "NewTargetItemGroup";
-            newTarget1.Add2NewLabaledChildrenWithVerify<ProjectItemGroupElement>(NewTargetItemGroup, (t, l) => t.AddItemGroup(), out var newItemGroup1, out var newItemGroup2);
+            newTarget1.Add2NewLabeledChildrenWithVerify<ProjectItemGroupElement>(NewTargetItemGroup, (t, l) => t.AddItemGroup(), out var newItemGroup1, out var newItemGroup2);
 
             // Add property groups
             const string NewPropertyGroup = "NewPropertyGroup";
-            newTarget1.Add2NewLabaledChildrenWithVerify<ProjectPropertyGroupElement>(NewPropertyGroup, (t, l) => t.AddPropertyGroup(), out var newPropertyGroup1, out var newPropertyGroup2);
+            newTarget1.Add2NewLabeledChildrenWithVerify<ProjectPropertyGroupElement>(NewPropertyGroup, (t, l) => t.AddPropertyGroup(), out var newPropertyGroup1, out var newPropertyGroup2);
 
             // Add property groups
             newTarget1.Append2NewChildrenWithVerify<ProjectOnErrorElement>("errTarget", (p, et) => p.CreateOnErrorElement(et), (oe, et)=>oe.ExecuteTargetsAttribute == et, out var newOnErr1, out var newOnErr2);
@@ -408,7 +391,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.ThrowsAny<InvalidOperationException>(() => choose.View.Condition = "ccc");
 
             Assert.Empty(choose.View.WhenElements);
-            choose.Append2NewLabaledChildrenWithVerify<ProjectWhenElement>("when", (p, l) => p.CreateWhenElement($"'$(c)' == '{l}'"), out var when1, out var when2);
+            choose.Append2NewLabeledChildrenWithVerify<ProjectWhenElement>("when", (p, l) => p.CreateWhenElement($"'$(c)' == '{l}'"), out var when1, out var when2);
             Assert.Equal(2, choose.View.WhenElements.Count);
             when1.VerifySame(choose.QuerySingleChildrenWithValidation<ProjectWhenElement>((ch) => ch.Label == when1.View.Label));
             when2.VerifySame(choose.QuerySingleChildrenWithValidation<ProjectWhenElement>((ch) => ch.Label == when2.View.Label));
@@ -442,15 +425,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
             when.VerifySetter("Condition", (we) => we.Condition, (we, v) => we.Condition = v);
             Assert.Empty(when.View.ChooseElements);
-            when.Append2NewLabaledChildrenWithVerify<ProjectChooseElement>("choose", (p, l) => p.CreateChooseElement(), out var choose1, out var choose2);
+            when.Append2NewLabeledChildrenWithVerify<ProjectChooseElement>("choose", (p, l) => p.CreateChooseElement(), out var choose1, out var choose2);
             Assert.Equal(2, when.View.ChooseElements.Count);
 
             Assert.Empty(when.View.ItemGroups);
-            when.Append2NewLabaledChildrenWithVerify<ProjectItemGroupElement>("itemGroup", (p, l) => p.CreateItemGroupElement(), out var itemGroup1, out var itemGroup2);
+            when.Append2NewLabeledChildrenWithVerify<ProjectItemGroupElement>("itemGroup", (p, l) => p.CreateItemGroupElement(), out var itemGroup1, out var itemGroup2);
             Assert.Equal(2, when.View.ItemGroups.Count);
 
             Assert.Empty(when.View.PropertyGroups);
-            when.Append2NewLabaledChildrenWithVerify<ProjectPropertyGroupElement>("propGroup", (p, l) => p.CreatePropertyGroupElement(), out var propGroup1, out var propGroup2);
+            when.Append2NewLabeledChildrenWithVerify<ProjectPropertyGroupElement>("propGroup", (p, l) => p.CreatePropertyGroupElement(), out var propGroup1, out var propGroup2);
             Assert.Equal(2, when.View.PropertyGroups.Count);
 
             when.Verify(); // will verify all collections.
@@ -480,15 +463,15 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var otherwise = choose.AppendNewChaildWithVerify<ProjectOtherwiseElement>(ObjectType.View, "when", (p, s) => p.CreateOtherwiseElement(), (p, s) => true);
 
             Assert.Empty(otherwise.View.ChooseElements);
-            otherwise.Append2NewLabaledChildrenWithVerify<ProjectChooseElement>("choose", (p, l) => p.CreateChooseElement(), out var choose1, out var choose2);
+            otherwise.Append2NewLabeledChildrenWithVerify<ProjectChooseElement>("choose", (p, l) => p.CreateChooseElement(), out var choose1, out var choose2);
             Assert.Equal(2, otherwise.View.ChooseElements.Count);
 
             Assert.Empty(otherwise.View.ItemGroups);
-            otherwise.Append2NewLabaledChildrenWithVerify<ProjectItemGroupElement>("itemGroup", (p, l) => p.CreateItemGroupElement(), out var itemGroup1, out var itemGroup2);
+            otherwise.Append2NewLabeledChildrenWithVerify<ProjectItemGroupElement>("itemGroup", (p, l) => p.CreateItemGroupElement(), out var itemGroup1, out var itemGroup2);
             Assert.Equal(2, otherwise.View.ItemGroups.Count);
 
             Assert.Empty(otherwise.View.PropertyGroups);
-            otherwise.Append2NewLabaledChildrenWithVerify<ProjectPropertyGroupElement>("propGroup", (p, l) => p.CreatePropertyGroupElement(), out var propGroup1, out var propGroup2);
+            otherwise.Append2NewLabeledChildrenWithVerify<ProjectPropertyGroupElement>("propGroup", (p, l) => p.CreatePropertyGroupElement(), out var propGroup1, out var propGroup2);
             Assert.Equal(2, otherwise.View.PropertyGroups.Count);
 
             otherwise.Verify(); // will verify all collections.
@@ -667,7 +650,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             var pair = GetNewInMemoryProject("temp.prj");
             var xmlPair = new ProjectXmlPair(pair);
             var target = xmlPair.AddNewChaildWithVerify<ProjectTargetElement>(ObjectType.View, "NewTarget", (p, n) => p.AddTarget(n), (t, n) => string.Equals(t.Name, n));
-            var itemGrp = target.AddNewLabaledChaildWithVerify<ProjectItemGroupElement>(ObjectType.View, "tagetigrp", (p, s) => p.AddItemGroup());
+            var itemGrp = target.AddNewLabeledChaildWithVerify<ProjectItemGroupElement>(ObjectType.View, "tagetigrp", (p, s) => p.AddItemGroup());
             var itemInTargt = itemGrp.AddNewChaildWithVerify<ProjectItemElement>(ObjectType.View, "targetfile.cs", (p, s) => p.AddItem("cs", s), (pe, s) => pe.Include == s);
 
             var item = xmlPair.AddNewChaildWithVerify<ProjectItemElement>(ObjectType.View, "file.cpp", (p, s) => p.AddItem("cpp", s), (pe, s) => pe.Include == s);
@@ -718,7 +701,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         {
             var pair = GetNewInMemoryProject("temp.prj");
             var xmlPair = new ProjectXmlPair(pair);
-            var itemGrp = xmlPair.AddNewLabaledChaildWithVerify<ProjectItemGroupElement>(ObjectType.View, "igrp", (p, s) => p.AddItemGroup());
+            var itemGrp = xmlPair.AddNewLabeledChaildWithVerify<ProjectItemGroupElement>(ObjectType.View, "igrp", (p, s) => p.AddItemGroup());
 
             Assert.Empty(itemGrp.View.Items);
             itemGrp.Add2NewChildrenWithVerify<ProjectItemElement>("file.cpp", (ig, inc) => ig.AddItem("cpp", inc), (i, inc) => i.Include == inc, out var item1, out var item2);
@@ -740,7 +723,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         {
             var pair = GetNewInMemoryProject("temp.prj");
             var xmlPair = new ProjectXmlPair(pair);
-            var propGrp = xmlPair.AddNewLabaledChaildWithVerify<ProjectPropertyGroupElement>(ObjectType.View, "grp", (p, l) => p.AddPropertyGroup());
+            var propGrp = xmlPair.AddNewLabeledChaildWithVerify<ProjectPropertyGroupElement>(ObjectType.View, "grp", (p, l) => p.AddPropertyGroup());
             var prop = propGrp.AddNewChaildWithVerify<ProjectPropertyElement>(ObjectType.View, "prop", (pg, n) => pg.AddProperty(n, $"value{n}"), (p, n) => p.Name == n);
 
             prop.VerifySetter("newValue", (p) => p.Value, (p, v) => p.Value = v);
@@ -753,7 +736,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         {
             var pair = GetNewInMemoryProject("temp.prj");
             var xmlPair = new ProjectXmlPair(pair);
-            var propGrp = xmlPair.AddNewLabaledChaildWithVerify<ProjectPropertyGroupElement>(ObjectType.View, "grp", (p, l) => p.AddPropertyGroup());
+            var propGrp = xmlPair.AddNewLabeledChaildWithVerify<ProjectPropertyGroupElement>(ObjectType.View, "grp", (p, l) => p.AddPropertyGroup());
 
             Assert.Empty(propGrp.View.Properties);
             Assert.Empty(propGrp.View.PropertiesReversed);

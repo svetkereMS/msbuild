@@ -3,7 +3,7 @@
 
 namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
-    using System;
+    using System.Collections.Generic;
     using Microsoft.Build.Construction;
     using Microsoft.Build.ObjectModelRemoting;
 
@@ -33,6 +33,10 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public MockProjectElementLinkRemoter NextSibling => this.Export(Source.NextSibling);
 
         public ElementLocation Location => Source.Location;
+
+        public IReadOnlyCollection<XmlAttributeLink> Attributes => ProjectItemElementLink.GetAttributes(this.Source);
+
+        public string PureText => ProjectItemElementLink.GetPureText(this.Source);
 
         public void CopyFrom(MockProjectElementLinkRemoter element)
         {
@@ -90,6 +94,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public override ProjectElement PreviousSibling => EImpl.GetPreviousSibling();
         public override ProjectElement NextSibling => EImpl.GetNextSibling();
         public override ElementLocation Location => EImpl.GetLocation();
+        public override IReadOnlyCollection<XmlAttributeLink> Attributes => EImpl.GetAttributes();
+        public override string PureText => EImpl.GetPureText();
         public override void CopyFrom(ProjectElement element) => EImpl.CopyFrom(element);
         public override ProjectElement CreateNewInstance(ProjectRootElement owner) => EImpl.CreateNewInstance(owner);
         public override ElementLocation GetAttributeLocation(string attributeName) => EImpl.GetAttributeLocation(attributeName);

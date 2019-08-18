@@ -20,7 +20,6 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
         public ElementLinkPair(ProjectXmlPair pre, T view, T real) : base(view, real) { this.PRE = pre; }
 
-
         // the PRE.CreateXX(), AppendChild, way.
         public ElementLinkPair<CT> AppendNewChaildWithVerify<CT>(ObjectType where, string id, Func<ProjectRootElement, string, CT> adder, Func<CT, string, bool> matcher)
             where CT : ProjectElement
@@ -42,7 +41,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             where CT : ProjectElement
             => AppendNewChaildWithVerify(where, name, adder, (c, n) => string.Equals(c.ElementName, n));
 
-        public ElementLinkPair<CT> AppendNewLabaledChaildWithVerify<CT>(ObjectType where, string label, Func<ProjectRootElement, string, CT> adder)
+        public ElementLinkPair<CT> AppendNewLabeledChaildWithVerify<CT>(ObjectType where, string label, Func<ProjectRootElement, string, CT> adder)
             where CT : ProjectElement
             => AppendNewChaildWithVerify(where, label,
                 (t, l) =>
@@ -72,7 +71,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             where CT : ProjectElement
             => AddNewChaildWithVerify(where, name, adder, (c, n) => string.Equals(c.ElementName, n));
 
-        public ElementLinkPair<CT> AddNewLabaledChaildWithVerify<CT>(ObjectType where, string label, Func<T, string, CT> adder)
+        public ElementLinkPair<CT> AddNewLabeledChaildWithVerify<CT>(ObjectType where, string label, Func<T, string, CT> adder)
             where CT : ProjectElement
             => AddNewChaildWithVerify(where, label,
                 (t, l)=>
@@ -98,11 +97,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             c2 = AppendNewNamedChaildWithVerify(ObjectType.Real, name.Ver(2), adder);
         }
 
-        public void Append2NewLabaledChildrenWithVerify<CT>(string label, Func<ProjectRootElement, string, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
+        public void Append2NewLabeledChildrenWithVerify<CT>(string label, Func<ProjectRootElement, string, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
             where CT : ProjectElement
         {
-            c1 = AppendNewLabaledChaildWithVerify(ObjectType.View, label.Ver(1), adder);
-            c2 = AppendNewLabaledChaildWithVerify(ObjectType.Real, label.Ver(2), adder);
+            c1 = AppendNewLabeledChaildWithVerify(ObjectType.View, label.Ver(1), adder);
+            c2 = AppendNewLabeledChaildWithVerify(ObjectType.Real, label.Ver(2), adder);
         }
 
         public void Add2NewChildrenWithVerify<CT>(string id, Func<T, string, CT> adder, Func<CT, string, bool> matcher, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
@@ -119,11 +118,11 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             c2 = AddNewNamedChaildWithVerify(ObjectType.Real, name.Ver(2), adder);
         }
 
-        public void Add2NewLabaledChildrenWithVerify<CT>(string label, Func<T, string, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
+        public void Add2NewLabeledChildrenWithVerify<CT>(string label, Func<T, string, CT> adder, out ElementLinkPair<CT> c1, out ElementLinkPair<CT> c2)
             where CT : ProjectElement
         {
-            c1 = AddNewLabaledChaildWithVerify(ObjectType.View, label.Ver(1), adder);
-            c2 = AddNewLabaledChaildWithVerify(ObjectType.Real, label.Ver(2), adder);
+            c1 = AddNewLabeledChaildWithVerify(ObjectType.View, label.Ver(1), adder);
+            c2 = AddNewLabeledChaildWithVerify(ObjectType.Real, label.Ver(2), adder);
         }
 
 
@@ -222,6 +221,16 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             ViewValidation.VerifyFindType(view, real);
             return new ElementLinkPair<CT>(this, view, real);
         }
+
+        public ElementLinkPair<CT> CreateFromView<CT>(CT view)
+            where CT : ProjectElement
+            => CreateFromView(view, this);
+        public static ElementLinkPair<CT> CreateFromView<CT>(CT view, ProjectXmlPair pre = null)
+            where CT : ProjectElement
+        {
+            var real = ViewValidation.GetRealObject(view);
+            return new ElementLinkPair<CT>(pre, view, real);
+        }
     }
 
 
@@ -260,10 +269,35 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
             Assert.True(obj == null || !IsLinkedObject(obj));
         }
 
+        // note this is a cheat, it relies on Mock implementation knowledge and that we are in the same process.
+        public static T GetRealObject<T>(T view)
+            where T : class
+        {
+            if (view == null) return null;
+            if (!IsLinkedObject(view)) return view;
+
+            var link = LinkedObjectsFactory.GetLink(view) as ILinkMock;
+            Assert.NotNull(link);
+            var remoter = link.Remoter as IRemoterSource;
+            Assert.NotNull(remoter);
+            var real = remoter.RealObject as T;
+            Assert.NotNull(real);
+            VerifyFindType(view, real);
+            return real;
+        }
+
         public static void VerifyLinked(object obj)
         {
             if (dbgIgnoreLinked) return;
             Assert.True(obj == null || IsLinkedObject(obj));
+        }
+
+
+        public static void VerifyNotNull(object obj, bool linked)
+        {
+            Assert.NotNull(obj);
+            if (dbgIgnoreLinked) return;
+            Assert.Equal(linked, IsLinkedObject(obj));
         }
 
         public static void VerifyNotLinkedNotNull(object obj)

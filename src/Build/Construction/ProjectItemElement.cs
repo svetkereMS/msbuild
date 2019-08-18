@@ -447,5 +447,7 @@ namespace Microsoft.Build.Construction
         /// Do not clone attributes which can be metadata. The corresponding expressed as attribute project elements are responsible for adding their attribute
         /// </summary>
         protected override bool ShouldCloneXmlAttribute(XmlAttribute attribute) => !ProjectMetadataElement.AttributeNameIsValidMetadataName(attribute.LocalName);
+
+        internal override bool ShouldCloneXmlAttribute(XmlAttributeLink attributeLink) => !ProjectMetadataElement.AttributeNameIsValidMetadataName(attributeLink.LocalName);
     }
 }

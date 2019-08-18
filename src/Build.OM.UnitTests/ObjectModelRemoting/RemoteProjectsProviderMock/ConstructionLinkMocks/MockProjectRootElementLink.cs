@@ -3,8 +3,8 @@
 
 namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
-    using System;
     using System.Collections.Generic;
+    using System;
     using System.IO;
     using System.Text;
     using System.Xml;
@@ -169,6 +169,8 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public override ProjectElement PreviousSibling => EImpl.GetPreviousSibling();
         public override ProjectElement NextSibling => EImpl.GetNextSibling();
         public override ElementLocation Location => EImpl.GetLocation();
+        public override IReadOnlyCollection<XmlAttributeLink> Attributes => EImpl.GetAttributes();
+        public override string PureText => EImpl.GetPureText();
         public override void CopyFrom(ProjectElement element) => EImpl.CopyFrom(element);
         public override ProjectElement CreateNewInstance(ProjectRootElement owner) => EImpl.CreateNewInstance(owner);
         public override ElementLocation GetAttributeLocation(string attributeName) => EImpl.GetAttributeLocation(attributeName);

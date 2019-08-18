@@ -1699,6 +1699,7 @@ namespace Microsoft.Build.ObjectModelRemoting
     public abstract partial class ProjectElementLink
     {
         protected ProjectElementLink() { }
+        public abstract System.Collections.Generic.IReadOnlyCollection<Microsoft.Build.ObjectModelRemoting.XmlAttributeLink> Attributes { get; }
         public abstract Microsoft.Build.Construction.ProjectRootElement ContainingProject { get; }
         public abstract string ElementName { get; }
         public abstract bool ExpressedAsAttribute { get; set; }
@@ -1707,14 +1708,17 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract string OuterElement { get; }
         public abstract Microsoft.Build.Construction.ProjectElementContainer Parent { get; }
         public abstract Microsoft.Build.Construction.ProjectElement PreviousSibling { get; }
+        public abstract string PureText { get; }
         public abstract void CopyFrom(Microsoft.Build.Construction.ProjectElement element);
         public static Microsoft.Build.Construction.ProjectElement CreateNewInstance(Microsoft.Build.Construction.ProjectElement xml, Microsoft.Build.Construction.ProjectRootElement owner) { throw null; }
         public abstract Microsoft.Build.Construction.ProjectElement CreateNewInstance(Microsoft.Build.Construction.ProjectRootElement owner);
         public static Microsoft.Build.Construction.ElementLocation GetAttributeLocation(Microsoft.Build.Construction.ProjectElement xml, string attributeName) { throw null; }
         public abstract Microsoft.Build.Construction.ElementLocation GetAttributeLocation(string attributeName);
+        public static System.Collections.Generic.IReadOnlyCollection<Microsoft.Build.ObjectModelRemoting.XmlAttributeLink> GetAttributes(Microsoft.Build.Construction.ProjectElement xml) { throw null; }
         public static string GetAttributeValue(Microsoft.Build.Construction.ProjectElement xml, string attributeName, bool nullIfNotExists) { throw null; }
         public abstract string GetAttributeValue(string attributeName, bool nullIfNotExists);
         public static bool GetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml) { throw null; }
+        public static string GetPureText(Microsoft.Build.Construction.ProjectElement xml) { throw null; }
         public static void MarkDirty(Microsoft.Build.Construction.ProjectElement xml, string reason, string param) { }
         public static void SetExpressedAsAttribute(Microsoft.Build.Construction.ProjectElement xml, bool value) { }
         public static void SetOrRemoveAttribute(Microsoft.Build.Construction.ProjectElement xml, string name, string value, bool clearAttributeCache, string reason, string param) { }
@@ -1969,5 +1973,13 @@ namespace Microsoft.Build.ObjectModelRemoting
     public abstract partial class UsingTaskParameterGroupElementLink : Microsoft.Build.ObjectModelRemoting.ProjectElementContainerLink
     {
         protected UsingTaskParameterGroupElementLink() { }
+    }
+    [System.Runtime.InteropServices.StructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public partial struct XmlAttributeLink
+    {
+        public XmlAttributeLink(string localName, string value, string namespaceUri) { throw null;}
+        public string LocalName { get { throw null; } }
+        public string NamespaceURI { get { throw null; } }
+        public string Value { get { throw null; } }
     }
 }

@@ -89,7 +89,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                             <i4 Include='i' Exclude='j' m2='v2' />
                         </ItemGroup>
 
-                        <ItemGroup>
+                        <ItemGroup Label=""Group1"">
                             <Compile Include=""Constants.cs"">
                                 <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
                             </Compile>
@@ -144,6 +144,7 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 
                         <Target
                             Name=""Frankenstein""
+                            Label=""Target1""
                             Returns=""@(_ProjectReferencesFromRAR);@(_ResolvedNativeProjectReferencePaths)""
                             Inputs=""@(_SourceItemsToCopyToOutputDirectory)""
                             BeforeTargets=""Compile""
@@ -156,6 +157,14 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
                                 <_ProjectReferencesFromRAR Include=""@(ReferencePath->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"">
                                 <OriginalItemSpec>%(ReferencePath.ProjectReferenceOriginalItemSpec)</OriginalItemSpec>
                                 </_ProjectReferencesFromRAR>
+
+                                <Compile Include=""Constants.cs"">
+                                    <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+                                </Compile>
+                                <Compile Include=""EncodingStringWriter.cs"">
+                                    <Link>EncodingStringWriter.cs</Link>
+                                </Compile>
+
                             </ItemGroup>
 
                             <FindAppConfigFile PrimaryList=""@(None)"" SecondaryList=""@(Content)"" TargetPath=""$(TargetFileName).config"" Condition=""'$(AppConfig)'==''"">

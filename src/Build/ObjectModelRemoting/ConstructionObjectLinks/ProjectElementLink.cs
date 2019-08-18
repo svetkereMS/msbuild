@@ -3,6 +3,8 @@
 
 namespace Microsoft.Build.ObjectModelRemoting
 {
+    using System.Collections.Generic;
+    using System.Xml;
     using Microsoft.Build.Construction;
 
     /// <summary>
@@ -82,6 +84,17 @@ namespace Microsoft.Build.ObjectModelRemoting
         public abstract ElementLocation Location { get; }
 
         /// <summary>
+        /// Supports <see cref="ProjectElement.CopyFrom"/>.
+        /// </summary>
+        public abstract IReadOnlyCollection<XmlAttributeLink> Attributes { get; }
+
+        /// <summary>
+        /// Supports <see cref="ProjectElement.CopyFrom"/>.
+        /// return raw xml content of the element if it has exactly 1 text child
+        /// </summary>
+        public abstract string PureText { get; }
+
+        /// <summary>
         /// Required to implement Attribute access for remote element.
         /// </summary>
         public abstract ElementLocation GetAttributeLocation(string attributeName);
@@ -116,6 +129,41 @@ namespace Microsoft.Build.ObjectModelRemoting
         public static void SetOrRemoveAttribute(ProjectElement xml, string name, string value, bool clearAttributeCache, string reason, string param) => xml.SetOrRemoveAttributeForLink(name, value, clearAttributeCache, reason, param);
         public static void MarkDirty(ProjectElement xml, string reason, string param) => xml.MarkDirty(reason, param);
         public static ProjectElement CreateNewInstance(ProjectElement xml, ProjectRootElement owner) =>  ProjectElement.CreateNewInstance(xml, owner);
+
+        public static string GetPureText(ProjectElement xml)
+        {
+            string result = null;
+            if (xml.XmlElement.ChildNodes.Count == 1 && xml.XmlElement.FirstChild.NodeType == XmlNodeType.Text)
+            {
+                result = xml.XmlElement.FirstChild.Value;
+            }
+
+            return result;
+        }
+        public static IReadOnlyCollection<XmlAttributeLink> GetAttributes(ProjectElement xml)
+        {
+            List<XmlAttributeLink> result = new List<XmlAttributeLink>();
+            foreach (XmlAttribute attribute in xml.XmlElement.Attributes)
+            {
+                result.Add(new XmlAttributeLink(attribute.LocalName, attribute.Value, attribute.NamespaceURI));
+            }
+
+            return result;
+        }
+    }
+
+    public struct XmlAttributeLink
+    {
+        public XmlAttributeLink(string localName, string value, string namespaceUri)
+        {
+            this.LocalName = localName;
+            this.Value = value;
+            this.NamespaceURI = namespaceUri;
+        }
+
+        public string LocalName { get; }
+        public string Value { get; }
+        public string NamespaceURI { get; }
     }
 
     // the "equivalence" classes in cases when we don't need additional functionality,

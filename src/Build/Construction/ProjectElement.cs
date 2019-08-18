@@ -370,24 +370,46 @@ namespace Microsoft.Build.Construction
             }
 
             // Ensure the element name itself matches.
-            ReplaceElement(XmlUtilities.RenameXmlElement(XmlElement, element.XmlElement.Name, XmlElement.NamespaceURI));
+            ReplaceElement(XmlUtilities.RenameXmlElement(XmlElement, element.ElementName, XmlElement.NamespaceURI));
 
-            // Copy over the attributes from the template element.
-            foreach (XmlAttribute attribute in element.XmlElement.Attributes)
+            // hard case when argument is a linked object (slight duplication).
+            if (element.Link != null)
             {
-                if (ShouldCloneXmlAttribute(attribute))
+                foreach (var remoteAttribute in element.Link.Attributes)
                 {
-                    XmlElement.SetAttribute(attribute.LocalName, attribute.NamespaceURI, attribute.Value);
+                    if (ShouldCloneXmlAttribute(remoteAttribute))
+                    {
+                        XmlElement.SetAttribute(remoteAttribute.LocalName, remoteAttribute.NamespaceURI, remoteAttribute.Value);
+                    }
                 }
-            }
+                var pureText = element.Link.PureText;
+                if (pureText != null)
+                {
+                    XmlElement.AppendChild(XmlElement.OwnerDocument.CreateTextNode(pureText));
+                }
 
-            // If this element has pure text content, copy that over.
-            if (element.XmlElement.ChildNodes.Count == 1 && element.XmlElement.FirstChild.NodeType == XmlNodeType.Text)
+                _expressedAsAttribute = element.ExpressedAsAttribute;
+            }
+            else
             {
-                XmlElement.AppendChild(XmlElement.OwnerDocument.CreateTextNode(element.XmlElement.FirstChild.Value));
-            }
 
-            _expressedAsAttribute = element._expressedAsAttribute;
+                // Copy over the attributes from the template element.
+                foreach (XmlAttribute attribute in element.XmlElement.Attributes)
+                {
+                    if (ShouldCloneXmlAttribute(attribute))
+                    {
+                        XmlElement.SetAttribute(attribute.LocalName, attribute.NamespaceURI, attribute.Value);
+                    }
+                }
+
+                // If this element has pure text content, copy that over.
+                if (element.XmlElement.ChildNodes.Count == 1 && element.XmlElement.FirstChild.NodeType == XmlNodeType.Text)
+                {
+                    XmlElement.AppendChild(XmlElement.OwnerDocument.CreateTextNode(element.XmlElement.FirstChild.Value));
+                }
+
+                _expressedAsAttribute = element._expressedAsAttribute;
+            }
 
             MarkDirty("CopyFrom", null);
             _condition = null;
@@ -396,10 +418,9 @@ namespace Microsoft.Build.Construction
         /// <summary>
         /// Hook for subclasses to specify whether the given <param name="attribute"></param> should be cloned or not
         /// </summary>
-        protected virtual bool ShouldCloneXmlAttribute(XmlAttribute attribute)
-        {
-            return true;
-        }
+        protected virtual bool ShouldCloneXmlAttribute(XmlAttribute attribute) => true;
+
+        internal virtual bool ShouldCloneXmlAttribute(XmlAttributeLink attributeLink) => true;
 
         /// <summary>
         /// Called only by the parser to tell the ProjectRootElement its backing XmlElement and its own parent project (itself)

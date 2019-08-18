@@ -3,7 +3,9 @@
 
 namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
 {
+    using System.Collections.Generic;
     using Microsoft.Build.Construction;
+    using Microsoft.Build.ObjectModelRemoting;
     /// <summary>
     /// The C# does not really provide a easy way to efficiently implement inheritance in cases like this
     /// for abstract classes or interface, when there is a hierarchy, it is not way to share the implementation.
@@ -89,6 +91,16 @@ namespace Microsoft.Build.UnitTests.OM.ObjectModelRemoting
         public static ElementLocation GetLocation(this IProjectElementLinkHelper xml)
         {
             return xml.ElementProxy.Location;
+        }
+
+        public static IReadOnlyCollection<XmlAttributeLink> GetAttributes(this IProjectElementLinkHelper xml)
+        {
+            return xml.ElementProxy.Attributes;
+        }
+
+        public static string GetPureText(this IProjectElementLinkHelper xml)
+        {
+            return xml.ElementProxy.PureText;
         }
 
         public static void CopyFrom(this IProjectElementLinkHelper xml, ProjectElement element)
