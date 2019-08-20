@@ -412,7 +412,7 @@ namespace Microsoft.Build.Construction
             }
 
             MarkDirty("CopyFrom", null);
-            _condition = null;
+            ClearAttributeCache();
         }
 
         /// <summary>
